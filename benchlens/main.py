@@ -74,9 +74,41 @@ def db_ping() -> None:
 
 @db_app.command("bootstrap")
 def db_bootstrap() -> None:
-    """Create the warehouse schema and load seed data. (Day 2)"""
-    console.print("[yellow]Not implemented yet — scheduled for Day 2.[/yellow]")
-    raise typer.Exit(code=2)
+    """Create the warehouse schema, load seed data, and apply migrations."""
+    from scripts.bootstrap_db import main as run_bootstrap
+
+    code = run_bootstrap()
+    raise typer.Exit(code=code)
+
+
+@db_app.command("reset")
+def db_reset(
+    yes: bool = typer.Option(False, "--yes", "-y", help="Skip confirmation prompt."),
+) -> None:
+    """Drop and recreate all warehouse tables (dev only)."""
+    from sqlalchemy import text
+
+    from benchlens.utils.db import get_engine
+
+    if not yes:
+        confirm = typer.confirm(
+            "This will DROP all BenchLens tables. Continue?", default=False
+        )
+        if not confirm:
+            console.print("[yellow]Aborted.[/yellow]")
+            raise typer.Exit(code=1)
+
+    drop_sql = """
+        DROP TABLE IF EXISTS fact_kpi_value CASCADE;
+        DROP TABLE IF EXISTS fact_benchmark_run CASCADE;
+        DROP TABLE IF EXISTS etl_run_log CASCADE;
+        DROP TABLE IF EXISTS dim_kpi, dim_model, dim_stack, dim_hardware,
+                             dim_workload, dim_date CASCADE;
+        DROP TABLE IF EXISTS schema_version CASCADE;
+    """
+    with get_engine().begin() as conn:
+        conn.exec_driver_sql(drop_sql)
+    console.print("[green]All BenchLens tables dropped.[/green] Run [bold]benchlens db bootstrap[/bold] to recreate.")
 
 
 # ---------- pipeline subcommands ----------
