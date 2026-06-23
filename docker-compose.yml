@@ -1,0 +1,24 @@
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: benchlens-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-benchlens}
+      POSTGRES_USER: ${POSTGRES_USER:-benchlens}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-benchlens}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - benchlens_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-benchlens}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # api and etl services are added on Day 9.
+
+volumes:
+  benchlens_pgdata:
+    driver: local

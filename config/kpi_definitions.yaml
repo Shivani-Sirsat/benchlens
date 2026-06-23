@@ -1,0 +1,110 @@
+# BenchLens — canonical KPI catalog.
+# Drives the KPI calculator (Day 4) and is loaded into dim_kpi (Day 2 seed).
+# direction: "higher_is_better" | "lower_is_better"
+# category:  "performance" | "power" | "quality" | "reliability"
+
+kpis:
+  - id: throughput
+    name: Throughput
+    category: performance
+    unit: ops/sec
+    direction: higher_is_better
+    description: Operations completed per second.
+
+  - id: tokens_per_sec
+    name: Tokens / Second
+    category: performance
+    unit: tok/s
+    direction: higher_is_better
+    description: LLM inference token-generation rate.
+
+  - id: inference_time_ms
+    name: Inference Time
+    category: performance
+    unit: ms
+    direction: lower_is_better
+    description: End-to-end inference latency per request.
+
+  - id: latency_p50
+    name: Latency p50
+    category: performance
+    unit: ms
+    direction: lower_is_better
+    description: 50th percentile request latency.
+
+  - id: latency_p95
+    name: Latency p95
+    category: performance
+    unit: ms
+    direction: lower_is_better
+    description: 95th percentile request latency.
+
+  - id: latency_p99
+    name: Latency p99
+    category: performance
+    unit: ms
+    direction: lower_is_better
+    description: 99th percentile request latency.
+
+  - id: power_watts_avg
+    name: Average Power Draw
+    category: power
+    unit: W
+    direction: lower_is_better
+    description: Mean wall-power draw during the run.
+
+  - id: energy_kwh
+    name: Energy Consumed
+    category: power
+    unit: kWh
+    direction: lower_is_better
+    description: Total energy consumed during the run.
+
+  - id: perf_per_watt
+    name: Performance per Watt
+    category: power
+    unit: ops/sec/W
+    direction: higher_is_better
+    description: Throughput normalized by average power draw.
+
+  - id: gpu_util_pct
+    name: GPU Utilization
+    category: performance
+    unit: "%"
+    direction: higher_is_better
+    description: Mean GPU compute utilization.
+
+  - id: cpu_util_pct
+    name: CPU Utilization
+    category: performance
+    unit: "%"
+    direction: higher_is_better
+    description: Mean CPU utilization.
+
+  - id: npu_util_pct
+    name: NPU Utilization
+    category: performance
+    unit: "%"
+    direction: higher_is_better
+    description: Mean NPU utilization.
+
+  - id: memory_util_pct
+    name: Memory Utilization
+    category: performance
+    unit: "%"
+    direction: higher_is_better
+    description: Mean memory utilization.
+
+  - id: accuracy_score
+    name: Accuracy
+    category: quality
+    unit: score
+    direction: higher_is_better
+    description: Task-specific accuracy / quality score.
+
+  - id: success_rate
+    name: Success Rate
+    category: reliability
+    unit: "%"
+    direction: higher_is_better
+    description: Fraction of runs that completed successfully.

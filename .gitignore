@@ -1,0 +1,70 @@
+# Byte-compiled / cached
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+
+# Distribution / packaging
+build/
+dist/
+*.egg-info/
+*.egg
+.eggs/
+
+# Test / coverage
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+.nox/
+coverage.xml
+*.cover
+
+# Linters / type checkers
+.ruff_cache/
+.mypy_cache/
+.dmypy.json
+
+# Environments / secrets
+.env
+.env.*
+!.env.example
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Logs / local data
+logs/
+*.log
+*.sqlite
+*.db
+
+# Power BI working files
+*.pbix.bak
+*.tmp.pbix
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Docker
+*.pid
+
+# Local data dumps
+data/raw/
+data/staging/
+data/quarantine/

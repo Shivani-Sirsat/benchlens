@@ -1,0 +1,49 @@
+# BenchLens — application settings.
+# Values prefixed with ${VAR} are overridden by environment variables (see .env.example).
+# This file holds non-secret defaults; secrets live in .env.
+
+app:
+  name: BenchLens
+  version: 0.1.0
+  environment: ${APP_ENV:-development}
+
+database:
+  host: ${POSTGRES_HOST:-localhost}
+  port: ${POSTGRES_PORT:-5432}
+  name: ${POSTGRES_DB:-benchlens}
+  user: ${POSTGRES_USER:-benchlens}
+  password: ${POSTGRES_PASSWORD:-benchlens}
+  schema: ${POSTGRES_SCHEMA:-public}
+  pool_size: 10
+  max_overflow: 20
+  pool_pre_ping: true
+  echo: false
+
+api:
+  host: ${API_HOST:-0.0.0.0}
+  port: ${API_PORT:-8000}
+  workers: ${API_WORKERS:-2}
+  cors_origins:
+    - http://localhost:3000
+    - http://localhost:5173
+  jwt:
+    secret: ${JWT_SECRET:-change_me}
+    algorithm: ${JWT_ALGORITHM:-HS256}
+    expires_minutes: ${JWT_EXPIRES_MINUTES:-60}
+
+etl:
+  batch_size: 5000
+  retry_max_attempts: 5
+  retry_backoff_seconds: 2
+  quarantine_enabled: true
+
+scheduler:
+  daily_ingest_cron: "0 2 * * *"        # 02:00 daily
+  nightly_aggregate_cron: "0 3 * * *"   # 03:00 daily
+
+alerts:
+  enabled: false
+  channels:
+    - email
+    - teams
+  regression_severity_threshold: medium  # low | medium | high

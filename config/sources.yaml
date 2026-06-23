@@ -1,0 +1,32 @@
+# BenchLens — ingestion source registry.
+# Each source defines: connector type, location, schedule, and field mapping.
+# Populated on Day 3.
+
+sources: []
+
+# Example schema (uncomment + edit on Day 3):
+#
+# sources:
+#   - name: nightly_csv_dump
+#     connector: csv
+#     enabled: true
+#     path: data/raw/nightly/
+#     pattern: "*.csv"
+#     watermark_field: run_started_at
+#     schedule: "0 2 * * *"
+#     mapping:
+#       workload: workload_name
+#       hardware: hardware_sku
+#       model: model_name
+#       throughput: tokens_per_second
+#       inference_time_ms: latency_ms
+#
+#   - name: lab_api
+#     connector: rest
+#     enabled: false
+#     url: https://benchmarks.example.com/api/v1/runs
+#     auth:
+#       type: bearer
+#       token_env: LAB_API_TOKEN
+#     page_size: 200
+#     watermark_field: completed_at

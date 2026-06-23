@@ -1,0 +1,74 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "benchlens"
+version = "0.1.0"
+description = "BenchLens — centralized benchmark analytics platform with PostgreSQL warehouse, REST API, and Power BI dashboards."
+readme = "README.md"
+requires-python = ">=3.11"
+license = { file = "LICENSE" }
+authors = [{ name = "BenchLens contributors" }]
+keywords = ["benchmark", "analytics", "etl", "powerbi", "ai", "ml"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Programming Language :: Python :: 3.11",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+
+[project.scripts]
+benchlens = "benchlens.main:app"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["benchlens*"]
+
+# ---------- Ruff ----------
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+extend-exclude = ["notebooks", "powerbi", "kubernetes"]
+
+[tool.ruff.lint]
+select = [
+    "E",   # pycodestyle errors
+    "W",   # pycodestyle warnings
+    "F",   # pyflakes
+    "I",   # isort
+    "B",   # flake8-bugbear
+    "UP",  # pyupgrade
+    "C4",  # flake8-comprehensions
+    "SIM", # flake8-simplify
+]
+ignore = ["E501"]  # line length handled by formatter
+
+# ---------- Black ----------
+[tool.black]
+line-length = 100
+target-version = ["py311"]
+extend-exclude = "notebooks|powerbi|kubernetes"
+
+# ---------- Pytest ----------
+[tool.pytest.ini_options]
+minversion = "8.0"
+testpaths = ["tests"]
+addopts = "-ra --strict-markers --strict-config"
+markers = [
+    "unit: fast unit tests",
+    "integration: integration tests requiring DB / network",
+]
+asyncio_mode = "auto"
+
+# ---------- Coverage ----------
+[tool.coverage.run]
+source = ["benchlens"]
+omit = ["*/tests/*", "*/__init__.py"]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+]
