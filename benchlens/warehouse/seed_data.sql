@@ -27,12 +27,30 @@ ON CONFLICT (code) DO NOTHING;
 
 -- ---------- dim_workload ----------
 INSERT INTO dim_workload (code, name, category, version, description) VALUES
-    ('llama-inference-7b', 'Llama Inference 7B', 'llm',          '1.0', 'Llama 7B-class inference benchmark (prompt + decode).'),
-    ('phi3-inference',     'Phi-3 Inference',    'llm',          '1.0', 'Phi-3 small-model inference benchmark.'),
-    ('sdxl-image-gen',     'SDXL Image Generation', 'image_gen', '1.0', 'Stable Diffusion XL text-to-image generation.'),
-    ('resnet50-train',     'ResNet-50 Training',  'classical_ml', '1.0', 'ResNet-50 ImageNet training throughput.'),
-    ('tpcc-postgres',      'TPC-C on PostgreSQL', 'db',           '1.0', 'OLTP benchmark on PostgreSQL.'),
-    ('redis-bench',        'Redis Benchmark',     'db',           '1.0', 'redis-benchmark SET/GET ops/sec.')
+    -- AI / ML workloads
+    ('llama-inference-7b',  'Llama Inference 7B',     'llm',          '1.0', 'Llama 7B-class inference benchmark (prompt + decode).'),
+    ('phi3-inference',      'Phi-3 Inference',        'llm',          '1.0', 'Phi-3 small-model inference benchmark.'),
+    ('sdxl-image-gen',      'SDXL Image Generation',  'image_gen',    '1.0', 'Stable Diffusion XL text-to-image generation.'),
+    ('resnet50-train',      'ResNet-50 Training',     'classical_ml', '1.0', 'ResNet-50 ImageNet training throughput.'),
+
+    -- Database workloads (OLTP / OLAP / KV / Document)
+    ('hammerdb-tpcc',       'HammerDB TPC-C',         'db',           '1.0', 'HammerDB TPC-C OLTP benchmark (multi-DB capable).'),
+    ('hammerdb-tpch',       'HammerDB TPC-H',         'db',           '1.0', 'HammerDB TPC-H OLAP/decision-support benchmark.'),
+    ('pgsql-pgbench',       'PostgreSQL pgbench',     'db',           '1.0', 'pgbench TPC-B-like OLTP workload on PostgreSQL.'),
+    ('mssql-hammerdb',      'MSSQL HammerDB',         'db',           '1.0', 'HammerDB workload targeting Microsoft SQL Server.'),
+    ('mysql-sysbench',      'MySQL sysbench',         'db',           '1.0', 'sysbench OLTP read/write workload on MySQL.'),
+    ('mongodb-ycsb',        'MongoDB YCSB',           'db',           '1.0', 'YCSB key-value workload on MongoDB.'),
+    ('redis-bench',         'Redis Benchmark',        'db',           '1.0', 'redis-benchmark SET/GET ops/sec.'),
+    ('rocksdb-bench',       'RocksDB db_bench',       'db',           '1.0', 'RocksDB db_bench KV-store benchmark.'),
+    ('tpcc-postgres',       'TPC-C on PostgreSQL',    'db',           '1.0', 'OLTP benchmark on PostgreSQL (legacy entry).'),
+
+    -- Streaming / messaging
+    ('kafka-bench',         'Kafka Benchmark',        'streaming',    '1.0', 'kafka-producer/consumer-perf throughput + latency.'),
+
+    -- Big data / HPC
+    ('hadoop-bench',        'Hadoop Benchmark',       'big_data',     '1.0', 'Hadoop MapReduce I/O and compute benchmark.'),
+    ('hibench-terasort',    'HiBench TeraSort',       'big_data',     '1.0', 'HiBench TeraSort distributed sort benchmark.'),
+    ('hibench-kmeans',      'HiBench K-Means',        'big_data',     '1.0', 'HiBench K-Means ML clustering on Spark/Hadoop.')
 ON CONFLICT (code) DO NOTHING;
 
 -- ---------- dim_hardware (CPU / GPU / NPU samples) ----------
