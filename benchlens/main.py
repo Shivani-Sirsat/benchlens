@@ -118,10 +118,39 @@ app.add_typer(pipeline_app, name="pipeline")
 
 
 @pipeline_app.command("run")
-def pipeline_run(source: str = typer.Option(..., "--source", "-s", help="Source name from sources.yaml.")) -> None:
-    """Run the end-to-end ETL pipeline for a given source. (Day 4)"""
-    console.print(f"[yellow]Pipeline run for source '{source}' — implemented on Day 4.[/yellow]")
-    raise typer.Exit(code=2)
+def pipeline_run(
+    source: str = typer.Option(..., "--source", "-s", help="Source name from sources.yaml."),
+    commit_watermark: bool = typer.Option(
+        False,
+        "--commit-watermark",
+        help="Persist the new watermark after a successful run.",
+    ),
+) -> None:
+    """Run the full ETL pipeline (ingest -> transform -> load) for one source."""
+    from benchlens.ingestion import ConnectorError
+    from benchlens.load.dim_resolver import UnknownDimensionError
+    from benchlens.orchestration import run_pipeline
+
+    try:
+        summary = run_pipeline(source, commit_watermark=commit_watermark)
+    except ConnectorError as e:
+        console.print(f"[red]Connector error:[/red] {e}")
+        raise typer.Exit(code=1) from None
+    except UnknownDimensionError as e:
+        console.print(f"[red]Unknown dimension:[/red] {e}")
+        raise typer.Exit(code=1) from None
+
+    table = Table(title="Pipeline summary", show_header=True, header_style="bold cyan")
+    table.add_column("Field")
+    table.add_column("Value")
+    for k, v in summary.as_table_rows():
+        table.add_row(k, v)
+    console.print(table)
+
+    if summary.runs_upserted == 0 and summary.rows_extracted > 0:
+        console.print("[yellow]No rows loaded — check quarantine / dimension warnings above.[/yellow]")
+        raise typer.Exit(code=1)
+    console.print("[green]Pipeline complete.[/green]")
 
 
 @app.command()

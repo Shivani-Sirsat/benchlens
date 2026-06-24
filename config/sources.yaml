@@ -10,6 +10,8 @@ sources:
     pattern: "*.csv"
     watermark_field: started_at
     description: "Day 3 sample CSV fixtures — realistic AI/ML + DB rows."
+    mapping:
+      source_record_key: run_id
 
   - name: sample_json
     connector: json
@@ -19,6 +21,8 @@ sources:
     records_path: records
     watermark_field: started_at
     description: "Day 3 sample JSON fixtures — nested KPI payloads."
+    mapping:
+      source_record_key: run_id
 
 # ---- Reference / future-use examples (disabled by default) ---------------
 
