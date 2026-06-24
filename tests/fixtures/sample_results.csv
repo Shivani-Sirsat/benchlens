@@ -1,0 +1,11 @@
+run_id,workload_code,hardware_code,model_code,stack_code,started_at,ended_at,duration_s,run_status,throughput,tokens_per_sec,inference_time_ms,latency_p95_ms,gpu_util_pct,cpu_util_pct,memory_util_pct,power_watts_avg,perf_per_watt
+run_0001,llama2-inference,nvidia-rtx-4090,llama-2-7b,pytorch,2025-10-01T08:00:00Z,2025-10-01T08:05:00Z,300.0,success,128.4,2150.7,12.5,18.9,92.3,34.2,71.5,420.1,0.305
+run_0002,llama2-inference,nvidia-rtx-4090,llama-2-13b,pytorch,2025-10-01T08:30:00Z,2025-10-01T08:38:30Z,510.0,success,76.8,1280.3,21.4,29.2,94.1,36.8,82.0,438.5,0.175
+run_0003,phi3-inference,nvidia-rtx-4090,phi-3-mini,pytorch,2025-10-02T09:15:00Z,2025-10-02T09:18:00Z,180.0,success,210.5,3520.6,7.8,11.4,88.9,28.3,52.7,395.0,0.533
+run_0004,stable-diffusion-xl,nvidia-rtx-4090,sdxl-base,diffusers,2025-10-02T10:00:00Z,2025-10-02T10:12:30Z,750.0,success,3.2,,290.1,420.5,98.4,40.1,68.2,445.7,0.0072
+run_0005,llama2-inference,nvidia-a100,llama-2-70b,vllm,2025-10-03T11:00:00Z,2025-10-03T11:25:00Z,1500.0,success,28.7,485.4,55.0,72.1,96.5,45.0,88.4,401.3,0.0715
+run_0006,redis-bench,intel-xeon-8480,,redis,2025-10-03T14:00:00Z,2025-10-03T14:02:00Z,120.0,success,185402.3,,0.42,0.78,,72.1,48.9,205.4,902.6
+run_0007,tpcc-postgres,intel-xeon-8480,,postgres,2025-10-04T15:00:00Z,2025-10-04T15:30:00Z,1800.0,success,12345.6,,8.4,14.8,,85.6,78.4,235.8,52.4
+run_0008,phi3-inference,nvidia-rtx-4090,phi-3-medium,pytorch,2025-10-05T09:30:00Z,2025-10-05T09:35:00Z,300.0,failed,,,,,,,,,
+run_0009,llama2-inference,amd-mi300x,llama-2-7b,vllm,2025-10-06T10:00:00Z,2025-10-06T10:04:30Z,270.0,success,142.6,2388.5,11.4,17.2,90.8,32.1,68.7,395.2,0.361
+run_0010,stable-diffusion-xl,intel-arc-a770,sdxl-turbo,diffusers,2025-10-07T11:30:00Z,2025-10-07T11:42:00Z,690.0,success,4.8,,205.4,310.2,84.1,36.5,62.0,228.5,0.021

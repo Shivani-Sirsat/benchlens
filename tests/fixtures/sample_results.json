@@ -1,0 +1,108 @@
+{
+  "schema_version": "1.0",
+  "exported_at": "2025-10-08T12:00:00Z",
+  "records": [
+    {
+      "run_id": "run_j001",
+      "workload_code": "llama2-inference",
+      "hardware_code": "nvidia-rtx-4090",
+      "model_code": "llama-2-7b",
+      "stack_code": "pytorch",
+      "started_at": "2025-10-08T08:00:00Z",
+      "ended_at": "2025-10-08T08:04:48Z",
+      "duration_s": 288.0,
+      "run_status": "success",
+      "kpis": {
+        "throughput": 131.7,
+        "tokens_per_sec": 2204.8,
+        "inference_time_ms": 12.1,
+        "latency_p95_ms": 18.5,
+        "gpu_util_pct": 91.0,
+        "memory_util_pct": 70.8,
+        "power_watts_avg": 415.7
+      },
+      "tags": ["batch=32", "fp16"]
+    },
+    {
+      "run_id": "run_j002",
+      "workload_code": "phi3-inference",
+      "hardware_code": "nvidia-rtx-4090",
+      "model_code": "phi-3-mini",
+      "stack_code": "pytorch",
+      "started_at": "2025-10-08T09:15:00Z",
+      "ended_at": "2025-10-08T09:17:30Z",
+      "duration_s": 150.0,
+      "run_status": "success",
+      "kpis": {
+        "throughput": 215.8,
+        "tokens_per_sec": 3601.4,
+        "inference_time_ms": 7.6,
+        "latency_p95_ms": 11.0,
+        "gpu_util_pct": 87.6,
+        "memory_util_pct": 51.2,
+        "power_watts_avg": 388.4
+      },
+      "tags": ["batch=64", "fp16"]
+    },
+    {
+      "run_id": "run_j003",
+      "workload_code": "stable-diffusion-xl",
+      "hardware_code": "nvidia-a100",
+      "model_code": "sdxl-base",
+      "stack_code": "diffusers",
+      "started_at": "2025-10-09T10:00:00Z",
+      "ended_at": "2025-10-09T10:09:12Z",
+      "duration_s": 552.0,
+      "run_status": "success",
+      "kpis": {
+        "throughput": 4.5,
+        "inference_time_ms": 222.4,
+        "latency_p95_ms": 295.1,
+        "gpu_util_pct": 97.3,
+        "memory_util_pct": 79.1,
+        "power_watts_avg": 410.2
+      },
+      "tags": ["steps=50", "resolution=1024"]
+    },
+    {
+      "run_id": "run_j004",
+      "workload_code": "redis-bench",
+      "hardware_code": "intel-xeon-8480",
+      "model_code": null,
+      "stack_code": "redis",
+      "started_at": "2025-10-09T14:00:00Z",
+      "ended_at": "2025-10-09T14:01:30Z",
+      "duration_s": 90.0,
+      "run_status": "success",
+      "kpis": {
+        "throughput": 192804.6,
+        "latency_p95_ms": 0.72,
+        "cpu_util_pct": 75.4,
+        "memory_util_pct": 49.6,
+        "power_watts_avg": 215.3
+      },
+      "tags": ["clients=50", "pipeline=10"]
+    },
+    {
+      "run_id": "run_j005",
+      "workload_code": "llama2-inference",
+      "hardware_code": "amd-mi300x",
+      "model_code": "llama-2-13b",
+      "stack_code": "vllm",
+      "started_at": "2025-10-10T11:00:00Z",
+      "ended_at": "2025-10-10T11:08:00Z",
+      "duration_s": 480.0,
+      "run_status": "success",
+      "kpis": {
+        "throughput": 82.4,
+        "tokens_per_sec": 1378.6,
+        "inference_time_ms": 19.8,
+        "latency_p95_ms": 27.3,
+        "gpu_util_pct": 93.7,
+        "memory_util_pct": 81.4,
+        "power_watts_avg": 408.0
+      },
+      "tags": ["batch=16", "fp16"]
+    }
+  ]
+}

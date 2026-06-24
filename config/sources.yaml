@@ -1,32 +1,58 @@
 # BenchLens — ingestion source registry.
 # Each source defines: connector type, location, schedule, and field mapping.
-# Populated on Day 3.
 
-sources: []
+sources:
+  # ---- Sample sources (used by Day 3 CLI acceptance) ---------------------
+  - name: sample_csv
+    connector: csv
+    enabled: true
+    path: data/raw/sample_csv/
+    pattern: "*.csv"
+    watermark_field: started_at
+    description: "Day 3 sample CSV fixtures — realistic AI/ML + DB rows."
 
-# Example schema (uncomment + edit on Day 3):
-#
-# sources:
-#   - name: nightly_csv_dump
-#     connector: csv
-#     enabled: true
-#     path: data/raw/nightly/
-#     pattern: "*.csv"
-#     watermark_field: run_started_at
-#     schedule: "0 2 * * *"
-#     mapping:
-#       workload: workload_name
-#       hardware: hardware_sku
-#       model: model_name
-#       throughput: tokens_per_second
-#       inference_time_ms: latency_ms
-#
-#   - name: lab_api
-#     connector: rest
-#     enabled: false
-#     url: https://benchmarks.example.com/api/v1/runs
-#     auth:
-#       type: bearer
-#       token_env: LAB_API_TOKEN
-#     page_size: 200
-#     watermark_field: completed_at
+  - name: sample_json
+    connector: json
+    enabled: true
+    path: data/raw/sample_json/sample_results.json
+    format: json
+    records_path: records
+    watermark_field: started_at
+    description: "Day 3 sample JSON fixtures — nested KPI payloads."
+
+# ---- Reference / future-use examples (disabled by default) ---------------
+
+  - name: nightly_csv_dump
+    connector: csv
+    enabled: false
+    path: data/raw/nightly/
+    pattern: "*.csv"
+    watermark_field: run_started_at
+    schedule: "0 2 * * *"
+    mapping:
+      workload: workload_name
+      hardware: hardware_sku
+      model: model_name
+      throughput: tokens_per_second
+      inference_time_ms: latency_ms
+
+  - name: lab_api
+    connector: rest
+    enabled: false
+    url: https://benchmarks.example.com/api/v1/runs
+    auth:
+      type: bearer
+      token_env: LAB_API_TOKEN
+    page_size: 200
+    records_path: data.runs
+    has_more_path: data.has_more
+    watermark_field: completed_at
+
+  - name: lab_db
+    connector: sql
+    enabled: false
+    url: "postgresql+psycopg://${LAB_DB_USER}:${LAB_DB_PASSWORD}@${LAB_DB_HOST}:5432/lab"
+    table: benchmark_runs
+    watermark_field: completed_at
+    chunk_size: 5000
+

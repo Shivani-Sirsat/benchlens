@@ -125,10 +125,72 @@ def pipeline_run(source: str = typer.Option(..., "--source", "-s", help="Source 
 
 
 @app.command()
-def ingest(source: str = typer.Option(..., "--source", "-s", help="Source name from sources.yaml.")) -> None:
-    """Ingest from a configured source. (Day 3)"""
-    console.print(f"[yellow]Ingest for source '{source}' — implemented on Day 3.[/yellow]")
-    raise typer.Exit(code=2)
+def ingest(
+    source: str = typer.Option(..., "--source", "-s", help="Source name from sources.yaml."),
+    save_raw: bool = typer.Option(
+        False, "--save-raw", help="Write the extracted DataFrame to data/raw_extracts/."
+    ),
+    commit_watermark: bool = typer.Option(
+        False,
+        "--commit-watermark",
+        help="Persist the new watermark after extraction (default: dry-run).",
+    ),
+    limit: int = typer.Option(10, "--limit", help="Rows to preview in the console."),
+) -> None:
+    """Run a single connector and print a summary of the extracted DataFrame."""
+    from pathlib import Path
+
+    from benchlens.ingestion import ConnectorError, build_connector_by_name
+
+    try:
+        connector = build_connector_by_name(source)
+    except ConnectorError as e:
+        console.print(f"[red]ERROR[/red] {e}")
+        raise typer.Exit(code=2) from None
+
+    console.print(
+        f"[cyan]Ingest[/cyan] source=[bold]{source}[/bold] kind=[bold]{connector.kind}[/bold]"
+    )
+    try:
+        result = connector.run()
+    except ConnectorError as e:
+        console.print(f"[red]Connector failed:[/red] {e}")
+        raise typer.Exit(code=1) from None
+
+    df = result.records
+    summary = Table(title="Extraction summary", show_header=True, header_style="bold cyan")
+    summary.add_column("Field")
+    summary.add_column("Value")
+    summary.add_row("Source", result.source)
+    summary.add_row("Connector", result.connector)
+    summary.add_row("Rows", str(result.rows))
+    summary.add_row("Columns", str(len(df.columns)))
+    summary.add_row("New watermark", str(result.new_watermark))
+    summary.add_row("Extracted at", result.extracted_at.isoformat())
+    console.print(summary)
+
+    if result.rows:
+        preview = Table(title=f"Preview (first {min(limit, result.rows)} rows)", show_header=True)
+        for col in df.columns[:8]:
+            preview.add_column(str(col))
+        for _, row in df.head(limit).iterrows():
+            preview.add_row(*[str(row[c]) for c in df.columns[:8]])
+        console.print(preview)
+
+    if save_raw and result.rows:
+        out_dir = Path("data") / "raw_extracts"
+        out_dir.mkdir(parents=True, exist_ok=True)
+        out_path = out_dir / f"{source}_{result.extracted_at.strftime('%Y%m%dT%H%M%S')}.parquet"
+        try:
+            df.to_parquet(out_path)
+        except Exception:
+            out_path = out_path.with_suffix(".csv")
+            df.to_csv(out_path, index=False)
+        console.print(f"[green]Saved[/green] {out_path}")
+
+    if commit_watermark and result.new_watermark is not None:
+        connector.commit_watermark(result.new_watermark)
+        console.print(f"[green]Watermark committed:[/green] {result.new_watermark}")
 
 
 @app.command()

@@ -66,5 +66,7 @@ desktop.ini
 
 # Local data dumps
 data/raw/
+data/raw_extracts/
+data/state/
 data/staging/
 data/quarantine/
