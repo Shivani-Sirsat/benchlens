@@ -6,6 +6,46 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.0] — Day 6: REST API (FastAPI + JWT + RBAC)
+### Added
+- `benchlens/api/` package:
+  - `auth.py` — scrypt password hashing (stdlib `hashlib.scrypt`, no extra
+    dependency), `UserStore` seeded from `settings.yaml`, `JwtConfig`,
+    `create_access_token`/`decode_access_token` (HS256)
+  - `deps.py` — FastAPI dependencies for DB session, current user,
+    role-gated `require_role()` factory + `CurrentUser` / `AdminUser` /
+    `DbSession` annotated aliases
+  - `schemas.py` — Pydantic v2 response models (`RunOut`, `RunDetailOut`,
+    `RunPage`, `KpiValueOut`, dim outs, `QualityFindingOut`/`Page`,
+    `RuleOut`, `EtlRunOut`/`Page`, `TokenOut`, `UserOut`, `HealthOut`)
+  - `app.py` — application factory with CORS middleware, lifespan-driven
+    auth init, JSON exception handler, OpenAPI docs at `/docs` + `/redoc`
+- Routers under `benchlens/api/routes/`:
+  - `system.py` — `GET /health`, `GET /` (public)
+  - `auth.py` — `POST /auth/login` (OAuth2 password flow), `GET /auth/me`
+  - `runs.py` — `GET /runs` with filters (workload/hardware/model/stack/
+    status/date range/source) + paging, `GET /runs/{id}` returns KPI values
+  - `dims.py` — `GET /kpis`, `/workloads`, `/hardware`, `/stacks`, `/models`
+  - `quality.py` — `GET /quality/findings` (paged + filtered),
+    `GET /quality/rules`
+  - `etl.py` — `GET /etl/runs` (paged + filtered audit log)
+- CLI: `benchlens serve` now actually starts uvicorn against
+  `benchlens.api.app:app` (host/port/reload/workers options)
+- Tests:
+  - 8 unit tests in `tests/unit/test_auth.py` — password hashing, JWT
+    round-trip, bad signature, expired token, user store auth
+  - 21 integration tests in `tests/integration/test_api.py` via
+    `fastapi.testclient.TestClient` — covers health, login flows (good/bad/
+    unknown), bearer-token enforcement on protected routes, all dim
+    listings, runs list/detail/404, quality rules + findings, ETL audit
+
+### Verified
+- `pytest` — 73 passed (was 44 after Day 5)
+- Live server: `benchlens serve --port 8765` then `GET /health` (200),
+  `POST /auth/login` (200 + JWT), `GET /runs?limit=2` (200, 15 total),
+  `GET /runs/15` (returns 7 KPI values), `GET /quality/rules` (13 rules),
+  `GET /etl/runs` (9 audit rows). OpenAPI renders at `/docs`.
+
 ## [0.5.0] — Day 5: Data Quality & Regression Detection
 ### Added
 - Warehouse migration `002_quality_check_result.sql` — new table to persist

@@ -313,10 +313,23 @@ def serve(
     host: str = typer.Option("0.0.0.0", help="API bind host."),
     port: int = typer.Option(8000, help="API bind port."),
     reload: bool = typer.Option(False, "--reload", help="Enable auto-reload."),
+    workers: int = typer.Option(1, "--workers", help="Worker count (incompatible with --reload)."),
 ) -> None:
-    """Start the BenchLens REST API. (Day 6)"""
-    console.print(f"[yellow]API server (would bind {host}:{port}, reload={reload}) — implemented on Day 6.[/yellow]")
-    raise typer.Exit(code=2)
+    """Start the BenchLens REST API (FastAPI + JWT + RBAC)."""
+    import uvicorn
+
+    console.print(
+        f"[cyan]BenchLens API[/cyan] binding [bold]{host}:{port}[/bold] "
+        f"(reload={reload}, workers={workers}). Docs at /docs."
+    )
+    uvicorn.run(
+        "benchlens.api.app:app",
+        host=host,
+        port=port,
+        reload=reload,
+        workers=workers if not reload else 1,
+        log_level="info",
+    )
 
 
 if __name__ == "__main__":
