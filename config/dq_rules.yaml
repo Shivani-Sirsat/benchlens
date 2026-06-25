@@ -1,0 +1,114 @@
+# BenchLens — declarative Data Quality rules.
+# Loaded by benchlens.quality.rules. Each rule applies to KPI values written
+# during a pipeline run; failing rows are persisted to quality_check_result
+# and routed through the alert manager.
+
+defaults:
+  baseline_runs: 5            # how many prior runs make up a regression baseline
+  default_severity: warning   # severity when a rule omits one
+
+rules:
+  # -----------------------------------------------------------------------
+  # Range checks — value must lie in [min, max]. Severity escalates with
+  # how obviously wrong the value is.
+  # -----------------------------------------------------------------------
+  - id: throughput_positive
+    type: range
+    kpi_code: throughput
+    min: 0
+    severity: error
+    description: "Throughput must be non-negative."
+
+  - id: tokens_per_sec_positive
+    type: range
+    kpi_code: tokens_per_sec
+    min: 0
+    severity: error
+    description: "Tokens/sec must be non-negative."
+
+  - id: inference_time_positive
+    type: range
+    kpi_code: inference_time_ms
+    min: 0
+    severity: error
+
+  - id: gpu_util_pct_range
+    type: range
+    kpi_code: gpu_util_pct
+    min: 0
+    max: 100
+    severity: error
+    description: "GPU utilization must be a valid percentage."
+
+  - id: cpu_util_pct_range
+    type: range
+    kpi_code: cpu_util_pct
+    min: 0
+    max: 100
+    severity: error
+
+  - id: memory_util_pct_range
+    type: range
+    kpi_code: memory_util_pct
+    min: 0
+    max: 100
+    severity: error
+
+  - id: power_watts_reasonable
+    type: range
+    kpi_code: power_watts_avg
+    min: 1
+    max: 2000
+    severity: warning
+    description: "Power draw outside [1, 2000] W is implausible."
+
+  # -----------------------------------------------------------------------
+  # Freshness — every run's started_at should be recent.
+  # -----------------------------------------------------------------------
+  - id: run_freshness
+    type: freshness
+    max_age_days: 365
+    severity: warning
+    description: "Benchmark run is older than 1 year."
+
+  # -----------------------------------------------------------------------
+  # Regression detection — compare against rolling baseline.
+  # threshold_pct: % deviation that fires the alert (direction-aware).
+  # -----------------------------------------------------------------------
+  - id: throughput_regression
+    type: regression
+    kpi_code: throughput
+    baseline_runs: 5
+    threshold_pct: 15.0
+    severity: warning
+    description: "Throughput dropped >15% vs. last 5 comparable runs."
+
+  - id: tokens_per_sec_regression
+    type: regression
+    kpi_code: tokens_per_sec
+    baseline_runs: 5
+    threshold_pct: 15.0
+    severity: warning
+
+  - id: latency_p95_regression
+    type: regression
+    kpi_code: latency_p95
+    baseline_runs: 5
+    threshold_pct: 25.0
+    severity: warning
+    description: "p95 latency rose >25% vs. baseline."
+
+  - id: inference_time_regression
+    type: regression
+    kpi_code: inference_time_ms
+    baseline_runs: 5
+    threshold_pct: 25.0
+    severity: warning
+
+  - id: power_regression
+    type: regression
+    kpi_code: power_watts_avg
+    baseline_runs: 5
+    threshold_pct: 20.0
+    severity: warning
+    description: "Power consumption climbed >20% vs. baseline."

@@ -99,6 +99,7 @@ def db_reset(
             raise typer.Exit(code=1)
 
     drop_sql = """
+        DROP TABLE IF EXISTS quality_check_result CASCADE;
         DROP TABLE IF EXISTS fact_kpi_value CASCADE;
         DROP TABLE IF EXISTS fact_benchmark_run CASCADE;
         DROP TABLE IF EXISTS etl_run_log CASCADE;
@@ -125,14 +126,23 @@ def pipeline_run(
         "--commit-watermark",
         help="Persist the new watermark after a successful run.",
     ),
+    skip_quality: bool = typer.Option(
+        False,
+        "--skip-quality",
+        help="Skip the data-quality / regression-detection phase.",
+    ),
 ) -> None:
-    """Run the full ETL pipeline (ingest -> transform -> load) for one source."""
+    """Run the full ETL pipeline (ingest -> transform -> load -> DQ) for one source."""
     from benchlens.ingestion import ConnectorError
     from benchlens.load.dim_resolver import UnknownDimensionError
     from benchlens.orchestration import run_pipeline
 
     try:
-        summary = run_pipeline(source, commit_watermark=commit_watermark)
+        summary = run_pipeline(
+            source,
+            commit_watermark=commit_watermark,
+            run_quality=not skip_quality,
+        )
     except ConnectorError as e:
         console.print(f"[red]Connector error:[/red] {e}")
         raise typer.Exit(code=1) from None
@@ -151,6 +161,82 @@ def pipeline_run(
         console.print("[yellow]No rows loaded — check quarantine / dimension warnings above.[/yellow]")
         raise typer.Exit(code=1)
     console.print("[green]Pipeline complete.[/green]")
+
+
+# ---------- quality subcommands ----------
+
+quality_app = typer.Typer(help="Data quality + regression detection.", no_args_is_help=True)
+app.add_typer(quality_app, name="quality")
+
+
+@quality_app.command("rules")
+def quality_rules() -> None:
+    """List rules currently loaded from config/dq_rules.yaml."""
+    from benchlens.quality import load_rules
+
+    rules = load_rules()
+    table = Table(title=f"DQ rules ({len(rules)} total)", show_header=True, header_style="bold cyan")
+    table.add_column("ID")
+    table.add_column("Type")
+    table.add_column("Severity")
+    table.add_column("KPI / param")
+    table.add_column("Description")
+    for r in rules.range_rules:
+        bounds = f"{r.kpi_code} in [{r.min}, {r.max}]"
+        table.add_row(r.id, r.type, r.severity, bounds, r.description or "")
+    for r in rules.freshness_rules:
+        table.add_row(r.id, r.type, r.severity, f"max_age={r.max_age_days}d", r.description or "")
+    for r in rules.regression_rules:
+        params = f"{r.kpi_code} {r.threshold_pct}% / {r.baseline_runs}-run baseline"
+        table.add_row(r.id, r.type, r.severity, params, r.description or "")
+    console.print(table)
+
+
+@quality_app.command("history")
+def quality_history(
+    source: str | None = typer.Option(None, "--source", "-s", help="Filter by source name."),
+    limit: int = typer.Option(20, "--limit", help="Most-recent findings to show."),
+) -> None:
+    """Show the most recent persisted DQ findings."""
+    from sqlalchemy import select
+
+    from benchlens.utils.db import session_scope
+    from benchlens.warehouse.models import QualityCheckResult
+
+    with session_scope() as session:
+        stmt = select(QualityCheckResult).order_by(QualityCheckResult.detected_at.desc())
+        if source:
+            stmt = stmt.where(QualityCheckResult.source_name == source)
+        stmt = stmt.limit(limit)
+        rows = list(session.execute(stmt).scalars())
+
+    if not rows:
+        console.print("[yellow]No findings yet.[/yellow]")
+        return
+
+    table = Table(title=f"DQ findings (latest {len(rows)})", show_header=True, header_style="bold cyan")
+    table.add_column("Detected at")
+    table.add_column("Severity")
+    table.add_column("Rule")
+    table.add_column("KPI")
+    table.add_column("Observed")
+    table.add_column("Baseline/min/max")
+    table.add_column("Message", overflow="fold")
+    for r in rows:
+        bm = (
+            str(r.baseline_value) if r.baseline_value is not None
+            else f"[{r.expected_min}, {r.expected_max}]"
+        )
+        table.add_row(
+            r.detected_at.strftime("%Y-%m-%d %H:%M:%S"),
+            r.severity,
+            f"{r.rule_type}:{r.rule_id}",
+            r.kpi_code or "",
+            str(r.observed_value) if r.observed_value is not None else "",
+            bm,
+            r.message or "",
+        )
+    console.print(table)
 
 
 @app.command()

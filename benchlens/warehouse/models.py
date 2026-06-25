@@ -277,6 +277,49 @@ class EtlRunLog(Base):
     )
 
 
+class QualityCheckResult(Base):
+    """Persisted DQ + regression-detection findings (failed checks only)."""
+    __tablename__ = "quality_check_result"
+
+    check_id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
+    log_id: Mapped[int | None] = mapped_column(
+        BigInteger, ForeignKey("etl_run_log.log_id", ondelete="SET NULL")
+    )
+    rule_id: Mapped[str] = mapped_column(String(100), nullable=False)
+    rule_type: Mapped[str] = mapped_column(String(50), nullable=False)
+    severity: Mapped[str] = mapped_column(String(20), nullable=False)
+    status: Mapped[str] = mapped_column(String(20), nullable=False)
+    source_name: Mapped[str | None] = mapped_column(String(100))
+    source_record_key: Mapped[str | None] = mapped_column(String(200))
+    workload_code: Mapped[str | None] = mapped_column(String(50))
+    hardware_code: Mapped[str | None] = mapped_column(String(100))
+    kpi_code: Mapped[str | None] = mapped_column(String(50))
+    observed_value: Mapped[Decimal | None] = mapped_column(Numeric(20, 6))
+    expected_min: Mapped[Decimal | None] = mapped_column(Numeric(20, 6))
+    expected_max: Mapped[Decimal | None] = mapped_column(Numeric(20, 6))
+    baseline_value: Mapped[Decimal | None] = mapped_column(Numeric(20, 6))
+    deviation_pct: Mapped[Decimal | None] = mapped_column(Numeric(10, 3))
+    message: Mapped[str | None] = mapped_column(Text)
+    detected_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+    extra: Mapped[dict | None] = mapped_column(JSONB)
+
+    __table_args__ = (
+        CheckConstraint(
+            "status IN ('pass','fail')", name="quality_check_result_status_check"
+        ),
+        CheckConstraint(
+            "severity IN ('info','warning','error','critical')",
+            name="quality_check_result_severity_check",
+        ),
+        Index("idx_qcr_log", "log_id"),
+        Index("idx_qcr_rule", "rule_id"),
+        Index("idx_qcr_status", "status"),
+        Index("idx_qcr_kpi_code", "kpi_code"),
+    )
+
+
 __all__ = [
     "Base",
     "DimDate",
@@ -288,4 +331,5 @@ __all__ = [
     "FactBenchmarkRun",
     "FactKpiValue",
     "EtlRunLog",
+    "QualityCheckResult",
 ]

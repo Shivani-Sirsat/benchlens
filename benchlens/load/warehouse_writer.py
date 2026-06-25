@@ -15,7 +15,7 @@ Session by default).
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime, timezone
 
 import pandas as pd
@@ -38,6 +38,9 @@ class LoadResult:
     kpis_upserted: int
     rows_skipped: int  # rows whose dimension codes were unknown
     skipped_reasons: list[str]
+    # run_ids the writer just (re)wrote — used by the DQ phase to scope checks
+    # to the current pipeline batch. May be empty when nothing loaded.
+    run_ids: list[int] = field(default_factory=list)
 
 
 class WarehouseWriter:
@@ -76,6 +79,7 @@ class WarehouseWriter:
             kpis_upserted=kpis_upserted,
             rows_skipped=rows_in - len(run_payloads),
             skipped_reasons=skipped_reasons,
+            run_ids=sorted({int(v) for v in key_to_run_id.values()}),
         )
 
     # ------------------------------------------------------------------
