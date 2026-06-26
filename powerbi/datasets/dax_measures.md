@@ -230,18 +230,149 @@ SWITCH(
 
 ---
 
+## 9. Model comparison (Day 8 — Model Comparison dashboard)
+
+```dax
+Models Tested := DISTINCTCOUNT( ModelComparison[model_id] )
+
+Sum Run Count := SUM( ModelComparison[run_count] )
+
+Avg Throughput (Model)   := AVERAGE( ModelComparison[avg_throughput] )
+Avg Latency (Model, ms)  := AVERAGE( ModelComparison[avg_latency_ms] )
+Avg Perf/Watt (Model)    := AVERAGE( ModelComparison[avg_throughput_per_watt] )
+Avg Throughput/$1k (Model) := AVERAGE( ModelComparison[throughput_per_kdollar] )
+Avg Throughput / MParam  := AVERAGE( ModelComparison[throughput_per_million_params] )
+Avg Accuracy             := AVERAGE( ModelComparison[avg_accuracy] )
+Total Energy (kWh)       := SUM( ModelComparison[total_energy_kwh] )
+
+Parameter Count (B) :=
+DIVIDE( SELECTEDVALUE( ModelComparison[parameter_count] ), 1e9 )
+
+-- "Best" text cards: model with the top metric value in the current filter
+Top Model Throughput :=
+VAR ranked =
+    TOPN(
+        1,
+        SUMMARIZE(
+            ModelComparison,
+            ModelComparison[model_code],
+            "v", AVERAGE( ModelComparison[avg_throughput] )
+        ),
+        [v], DESC
+    )
+RETURN
+CONCATENATEX(
+    ranked,
+    ModelComparison[model_code] & " (" & FORMAT( [v], "#,##0" ) & ")",
+    ", "
+)
+
+Top Model Throughput/$1k :=
+VAR ranked =
+    TOPN(
+        1,
+        SUMMARIZE(
+            ModelComparison,
+            ModelComparison[model_code],
+            "v", AVERAGE( ModelComparison[throughput_per_kdollar] )
+        ),
+        [v], DESC
+    )
+RETURN
+CONCATENATEX(
+    ranked,
+    ModelComparison[model_code] & " (" & FORMAT( [v], "0.00" ) & ")",
+    ", "
+)
+
+Top Model Per-Param :=
+VAR ranked =
+    TOPN(
+        1,
+        SUMMARIZE(
+            ModelComparison,
+            ModelComparison[model_code],
+            "v", AVERAGE( ModelComparison[throughput_per_million_params] )
+        ),
+        [v], DESC
+    )
+RETURN
+CONCATENATEX(
+    ranked,
+    ModelComparison[model_code] & " (" & FORMAT( [v], "0.00" ) & ")",
+    ", "
+)
+```
+
+---
+
+## 10. Reliability + detection lag (Day 8 — Regression Reliability dashboard)
+
+```dax
+-- Cohort-level reliability stats
+Sum Total Runs   := SUM( RunReliability[total_runs] )
+Sum Successes    := SUM( RunReliability[success_runs] )
+Sum Failures     := SUM( RunReliability[failure_runs] )
+
+Avg Cohort Success % := AVERAGE( RunReliability[success_pct] )
+Avg Cohort Failure % := AVERAGE( RunReliability[failure_pct] )
+Min MTBF Hours       := MIN( RunReliability[mtbf_hours] )
+Avg MTBF Hours       := AVERAGE( RunReliability[mtbf_hours] )
+
+-- Trend
+Sum Finding Count :=
+SUM( RegressionTrendDaily[finding_count] )
+
+Findings 30d :=
+CALCULATE(
+    [Sum Finding Count],
+    DATESINPERIOD( Calendar[Date], MAX( Calendar[Date] ), -30, DAY )
+)
+
+Critical+Error 30d :=
+CALCULATE(
+    [Sum Finding Count],
+    DATESINPERIOD( Calendar[Date], MAX( Calendar[Date] ), -30, DAY ),
+    RegressionTrendDaily[severity] IN { "critical", "error" }
+)
+
+-- Detection lag
+Findings With Lag :=
+COUNTROWS(
+    FILTER( DetectionLag, NOT ISBLANK( DetectionLag[detection_lag_minutes] ) )
+)
+
+Avg Detection Lag (min) :=
+AVERAGE( DetectionLag[detection_lag_minutes] )
+
+Median Detection Lag (min) :=
+MEDIAN( DetectionLag[detection_lag_minutes] )
+
+P95 Detection Lag (min) :=
+PERCENTILE.INC( DetectionLag[detection_lag_minutes], 0.95 )
+```
+
+---
+
 ## Format strings (apply in Model view)
 
-| Measure                  | Format string         |
-| ------------------------ | --------------------- |
-| `Success Rate %`         | `0.0 "%"`             |
-| `Runs MoM Δ %`           | `+0.0 "%";-0.0 "%";0` |
-| `KPI Δ % (30d vs 30d)`   | `+0.0 "%";-0.0 "%";0` |
-| `Quarantine Rate %`      | `0.00 "%"`            |
-| `ETL Success %`          | `0.0 "%"`             |
-| `Avg Power (W)`          | `#,##0 " W"`          |
-| `Avg Latency (ms)`       | `#,##0.0 " ms"`       |
-| `Energy Used (kWh)`      | `0.000 " kWh"`        |
-| `Perf per Watt`          | `0.000`               |
-| `Perf per $1k`           | `0.00`                |
-| Counts (`Total Runs`, …) | `#,##0`               |
+| Measure                       | Format string         |
+| ----------------------------- | --------------------- |
+| `Success Rate %`              | `0.0 "%"`             |
+| `Runs MoM Δ %`                | `+0.0 "%";-0.0 "%";0` |
+| `KPI Δ % (30d vs 30d)`        | `+0.0 "%";-0.0 "%";0` |
+| `Quarantine Rate %`           | `0.00 "%"`            |
+| `ETL Success %`               | `0.0 "%"`             |
+| `Avg Power (W)`               | `#,##0 " W"`          |
+| `Avg Latency (ms)`            | `#,##0.0 " ms"`       |
+| `Energy Used (kWh)`           | `0.000 " kWh"`        |
+| `Perf per Watt`               | `0.000`               |
+| `Perf per $1k`                | `0.00`                |
+| `Parameter Count (B)`         | `0.0 "B"`             |
+| `Avg Throughput / MParam`     | `0.00`                |
+| `Min MTBF Hours`              | `#,##0.0 " h"`        |
+| `Avg Detection Lag (min)`     | `#,##0.0 " min"`      |
+| `Median Detection Lag (min)`  | `#,##0.0 " min"`      |
+| `P95 Detection Lag (min)`     | `#,##0.0 " min"`      |
+| `Avg Cohort Success %`        | `0.0 "%"`             |
+| Counts (`Total Runs`, …)      | `#,##0`               |

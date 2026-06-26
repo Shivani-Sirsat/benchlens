@@ -54,14 +54,19 @@ In Power BI Desktop:
 
 ## Reporting views (semantic layer)
 
-| View                     | Grain                                       | Used by                       |
-| ------------------------ | ------------------------------------------- | ----------------------------- |
-| `vw_run_kpi_flat`        | one row per (run, KPI)                      | ad-hoc / explore              |
-| `vw_run_summary`         | one row per run                             | Executive Summary             |
-| `vw_hardware_efficiency` | one row per successful run                  | Hardware Performance          |
-| `vw_kpi_trend_daily`     | one row per (date, workload, hardware, KPI) | trend lines on both reports   |
-| `vw_regression_summary`  | one row per DQ finding                      | Executive Summary             |
-| `vw_etl_health`          | one row per (date, source, pipeline)        | Executive Summary, ops tile   |
+| View                          | Grain                                       | Used by                          |
+| ----------------------------- | ------------------------------------------- | -------------------------------- |
+| `vw_run_kpi_flat`             | one row per (run, KPI)                      | ad-hoc / explore                 |
+| `vw_run_summary`              | one row per run                             | Executive Summary                |
+| `vw_hardware_efficiency`      | one row per successful run                  | Hardware Performance             |
+| `vw_kpi_trend_daily`          | one row per (date, workload, hardware, KPI) | trend lines (both reports)       |
+| `vw_regression_summary`       | one row per DQ finding                      | Executive Summary, Regression    |
+| `vw_etl_health`               | one row per (date, source, pipeline)        | Executive Summary, ops tile      |
+| `vw_model_perf_pivot`         | one row per (model, workload, hardware, KPI)| Model Comparison                 |
+| `vw_model_comparison_matrix`  | one row per model                           | Model Comparison                 |
+| `vw_run_reliability`          | one row per (workload, hardware)            | Regression Reliability           |
+| `vw_regression_trend_daily`   | one row per (date, severity, cohort, KPI)   | Regression Reliability           |
+| `vw_regression_detection_lag` | one row per finding (with run join)         | Regression Reliability           |
 
 All views are non-materialized — Power BI Import mode reads the full result
 at refresh time, so each refresh sees the latest warehouse state.

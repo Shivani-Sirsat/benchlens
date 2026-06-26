@@ -6,6 +6,66 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.8.0] — Day 8: Power BI dashboards 3 & 4 + Phase 5 reporting views
+### Added
+- Migration `004_reporting_views_day8.sql` — 5 new BI-facing views:
+  - `vw_model_perf_pivot` — per (model, workload, hardware, KPI) aggregate
+    with derived `throughput_per_million_params` (CASE-guarded so it's
+    populated only for throughput-like KPIs)
+  - `vw_model_comparison_matrix` — one row per model: avg throughput,
+    latency, perf-per-watt, perf-per-$1k, perf-per-MParam, accuracy,
+    total energy. Per-run pivot CTE feeds the per-model rollup
+  - `vw_run_reliability` — per (workload, hardware) cohort: success/failure
+    counts, success%, failure%, MTBF (hours) — `mtbf_hours` uses
+    observation-window ÷ (failures − 1), guarded to require ≥2 failures
+  - `vw_regression_trend_daily` — daily DQ-finding counts + avg/max
+    deviation per (severity, rule_type, cohort, KPI)
+  - `vw_regression_detection_lag` — LEFT JOIN findings → runs via
+    (source_name, source_record_key); computes detection lag in minutes
+- `view_manager.py` refactor:
+  - `VIEW_MIGRATION_PATHS: list[Path]` replaces single-file constant —
+    refresh now iterates 003 + 004 in order
+  - `REPORTING_VIEWS` registry expanded from 6 → 11 entries
+- Power BI artifacts:
+  - `powerbi/reports/model_comparison.md` — full spec for dashboard 3
+    (5-card row, param-vs-throughput log scatter, family donut,
+    perf-per-MParam ranking, full comparison matrix, bookmarks)
+  - `powerbi/reports/regression_reliability.md` — full spec for dashboard
+    4 (5-card row, stacked-area severity trend, lowest-reliability cohort
+    matrix, detection-lag histogram with explicit bucketing, detailed
+    findings table, **drill-through configuration** documented for
+    Executive Summary → Regression Reliability)
+  - `powerbi/datasets/dax_measures.md` — 2 new sections:
+    section 9 model comparison (`Models Tested`, `Avg Throughput (Model)`,
+    `Avg Perf/Watt (Model)`, `Avg Throughput / MParam`, `Parameter Count
+    (B)`, "Top Model" `CONCATENATEX(TOPN(...))` text measures), section
+    10 reliability + detection lag (`Sum Failures`, `Min MTBF Hours`,
+    `Findings 30d`, `Critical+Error 30d`, `Avg/Median/P95 Detection Lag`)
+    + new format-string rows
+  - `powerbi/datasets/data_model.md` updated: 11 tables, 8 relationships
+    to Calendar (model + reliability tables intentionally not joined),
+    expanded hide-from-report list
+  - `powerbi/README.md` — view registry table updated to 11 rows
+- 17 new integration tests in `tests/integration/test_reporting_views.py`:
+  expected columns for all 5 new views, grain uniqueness for
+  `vw_model_perf_pivot` (per model+workload+hardware+kpi),
+  `vw_model_comparison_matrix` (per model), `vw_run_reliability` (per
+  workload+hardware) plus `success_pct + failure_pct = 100` invariant,
+  `success_runs + failure_runs <= total_runs` consistency,
+  `throughput_per_million_params` only populated for throughput-like
+  KPIs, `finding_count > 0` in regression-trend rows, non-negative
+  detection-lag when joined
+
+### Changed
+- `REPORTING_VIEWS` dict in `benchlens/reports/view_manager.py` reordered
+  with Day 7 / Day 8 grouping comments
+- `refresh_views()` now applies multiple migration files in order; raises
+  `FileNotFoundError` with the full list of missing files
+
+### Test coverage
+- 111 tests pass (up from 94 after Day 7, +17 new integration tests).
+- Live view counts after Day 8: 107 / 15 / 14 / 107 / 0 / 3 / 65 / 5 / 10 / 0 / 0
+
 ## [0.7.0] — Day 7: Power BI semantic layer (dashboards 1 & 2)
 ### Added
 - Migration `003_reporting_views.sql` — six SQL views that form the

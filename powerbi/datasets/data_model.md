@@ -19,17 +19,22 @@ pre-filled. You will be prompted for the `benchlens` user credentials
 
 ## Tables to import
 
-All six reporting views are exposed to Power BI as tables. Do **not** import
+All eleven reporting views are exposed to Power BI as tables. Do **not** import
 the raw `fact_*` / `dim_*` tables — the views are the supported contract.
 
-| Power BI table         | Source view              | Grain                                      |
-| ---------------------- | ------------------------ | ------------------------------------------ |
-| `RunKpi`               | `vw_run_kpi_flat`        | One row per (run, KPI)                     |
-| `RunSummary`           | `vw_run_summary`         | One row per run                            |
-| `HardwareEfficiency`   | `vw_hardware_efficiency` | One row per successful run                 |
-| `KpiTrendDaily`        | `vw_kpi_trend_daily`     | One row per (date, workload, hardware, KPI)|
-| `RegressionFindings`   | `vw_regression_summary`  | One row per DQ finding                     |
-| `EtlHealth`            | `vw_etl_health`          | One row per (date, source, pipeline)       |
+| Power BI table              | Source view                       | Grain                                                |
+| --------------------------- | --------------------------------- | ---------------------------------------------------- |
+| `RunKpi`                    | `vw_run_kpi_flat`                 | One row per (run, KPI)                               |
+| `RunSummary`                | `vw_run_summary`                  | One row per run                                      |
+| `HardwareEfficiency`        | `vw_hardware_efficiency`          | One row per successful run                           |
+| `KpiTrendDaily`             | `vw_kpi_trend_daily`              | One row per (date, workload, hardware, KPI)          |
+| `RegressionFindings`        | `vw_regression_summary`           | One row per DQ finding                               |
+| `EtlHealth`                 | `vw_etl_health`                   | One row per (date, source, pipeline)                 |
+| `ModelPerfPivot`            | `vw_model_perf_pivot`             | One row per (model, workload, hardware, KPI)         |
+| `ModelComparison`           | `vw_model_comparison_matrix`      | One row per model                                    |
+| `RunReliability`            | `vw_run_reliability`              | One row per (workload, hardware)                     |
+| `RegressionTrendDaily`      | `vw_regression_trend_daily`       | One row per (date, severity, rule_type, cohort, KPI) |
+| `DetectionLag`              | `vw_regression_detection_lag`     | One row per finding with detection lag               |
 
 ## Date table (mark as date table)
 
@@ -53,14 +58,20 @@ Then in Modeling: **Mark as date table** → choose `Date` column.
 
 ## Relationships
 
-| From table          | From column   | To table   | To column | Cardinality | Filter direction |
-| ------------------- | ------------- | ---------- | --------- | ----------- | ---------------- |
-| `RunKpi`            | `run_date`    | `Calendar` | `Date`    | Many-to-One | Single           |
-| `RunSummary`        | `run_date`    | `Calendar` | `Date`    | Many-to-One | Single           |
-| `HardwareEfficiency`| `run_date`    | `Calendar` | `Date`    | Many-to-One | Single           |
-| `KpiTrendDaily`     | `run_date`    | `Calendar` | `Date`    | Many-to-One | Single           |
-| `RegressionFindings`| `detected_date`| `Calendar`| `Date`    | Many-to-One | Single           |
-| `EtlHealth`         | `run_date`    | `Calendar` | `Date`    | Many-to-One | Single           |
+| From table              | From column     | To table   | To column | Cardinality | Filter direction |
+| ----------------------- | --------------- | ---------- | --------- | ----------- | ---------------- |
+| `RunKpi`                | `run_date`      | `Calendar` | `Date`    | Many-to-One | Single           |
+| `RunSummary`            | `run_date`      | `Calendar` | `Date`    | Many-to-One | Single           |
+| `HardwareEfficiency`    | `run_date`      | `Calendar` | `Date`    | Many-to-One | Single           |
+| `KpiTrendDaily`         | `run_date`      | `Calendar` | `Date`    | Many-to-One | Single           |
+| `RegressionFindings`    | `detected_date` | `Calendar` | `Date`    | Many-to-One | Single           |
+| `EtlHealth`             | `run_date`      | `Calendar` | `Date`    | Many-to-One | Single           |
+| `RegressionTrendDaily`  | `detected_date` | `Calendar` | `Date`    | Many-to-One | Single           |
+| `DetectionLag`          | `detected_date` | `Calendar` | `Date`    | Many-to-One | Single           |
+
+`ModelPerfPivot`, `ModelComparison`, and `RunReliability` are not joined to
+`Calendar` — their grain is not per-date (they aggregate across the full
+history). Slicers on those tables should bind to their own columns.
 
 All other fields stay denormalized inside each table. **Do not** create
 cross-table relationships between the reporting views — slicers should bind
@@ -76,6 +87,9 @@ or row identity):
 - `RunSummary` — `run_id`, `run_uuid`
 - `HardwareEfficiency` — `run_id`, `hardware_id`
 - `RegressionFindings` — `check_id`
+- `ModelPerfPivot` — `model_id`
+- `ModelComparison` — `model_id`
+- `DetectionLag` — `check_id`, `run_id`
 
 ## Refresh strategy
 
