@@ -1,0 +1,53 @@
+{
+  "name": "BenchLens Corporate",
+  "dataColors": [
+    "#3D5AFE",
+    "#00B8D4",
+    "#00C853",
+    "#FFAB00",
+    "#D50000",
+    "#AA00FF",
+    "#546E7A",
+    "#8D6E63"
+  ],
+  "background": "#FFFFFF",
+  "foreground": "#212121",
+  "tableAccent": "#3D5AFE",
+  "good": "#00C853",
+  "neutral": "#FFAB00",
+  "bad": "#D50000",
+  "maximum": "#3D5AFE",
+  "center": "#90CAF9",
+  "minimum": "#E3F2FD",
+  "null": "#BDBDBD",
+  "visualStyles": {
+    "*": {
+      "*": {
+        "background": [{ "color": { "solid": { "color": "#FFFFFF" } } }],
+        "title": [
+          {
+            "fontColor": { "solid": { "color": "#212121" } },
+            "fontSize": 14,
+            "fontFamily": "Segoe UI Semibold"
+          }
+        ],
+        "border": [
+          { "show": true, "color": { "solid": { "color": "#E0E0E0" } }, "radius": 4 }
+        ]
+      }
+    },
+    "card": {
+      "*": {
+        "dataLabels": [{ "fontSize": 28, "fontFamily": "Segoe UI Semibold" }],
+        "categoryLabels": [{ "fontSize": 11, "fontFamily": "Segoe UI" }]
+      }
+    },
+    "page": {
+      "*": {
+        "background": [
+          { "color": { "solid": { "color": "#FAFAFA" } }, "transparency": 0 }
+        ]
+      }
+    }
+  }
+}

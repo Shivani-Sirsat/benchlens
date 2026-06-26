@@ -6,6 +6,54 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.0] — Day 7: Power BI semantic layer (dashboards 1 & 2)
+### Added
+- Migration `003_reporting_views.sql` — six SQL views that form the
+  BI-facing semantic layer over the star schema:
+  - `vw_run_kpi_flat` — fully denormalized fact (one row per run x KPI)
+  - `vw_run_summary` — one row per run with preference-ordered headline
+    performance KPI surfaced via `ROW_NUMBER()`
+  - `vw_hardware_efficiency` — per-run KPI pivot via `FILTER` aggregates
+    plus derived `throughput_per_watt`, `throughput_per_kdollar`, and
+    `latency_efficiency_per_watt` (NULLIF guards on denominators)
+  - `vw_kpi_trend_daily` — daily aggregate (avg/min/max/stddev) per
+    workload/hardware/KPI
+  - `vw_regression_summary` — DQ findings joined to KPI attributes with
+    `severity_rank` for stable sorting
+  - `vw_etl_health` — daily pipeline health (success/fail counts, rows,
+    success %)
+- `benchlens/reports/` package:
+  - `view_manager.py` — `REPORTING_VIEWS` registry, `check_views()`
+    inspects `pg_views` + row counts, `refresh_views()` re-applies the
+    migration idempotently using a raw DBAPI cursor
+- CLI: `benchlens reports views check` and `benchlens reports views
+  refresh` under a new `reports` sub-app
+- Power BI artifacts under `powerbi/`:
+  - `datasets/benchmark_model.pbids` — Postgres connection file (Import mode)
+  - `datasets/data_model.md` — view-to-table mapping, `Calendar` DAX,
+    relationships table, column hiding rules
+  - `datasets/dax_measures.md` — 8 measure groups: run volume + status,
+    headline KPI averages, quality + regression, ETL health, hardware
+    efficiency, best-of comparisons, trend deltas, conditional-format
+    helpers + format-string reference
+  - `reports/executive_summary.md` — full spec for dashboard 1
+    (4-card row, combo trend, severity stacked column, top-regressions
+    table, workload×hardware heatmap, slicers, drill-through targets,
+    acceptance checklist)
+  - `reports/hardware_performance.md` — full spec for dashboard 2
+    (5-card row, perf-per-watt ranking, throughput-vs-power scatter,
+    trend chart, comparison matrix, bookmarks)
+  - `themes/benchlens_theme.json` — corporate theme JSON
+  - `deployment/refresh_views.ps1` — refresh-then-verify wrapper
+- 21 integration tests in `tests/integration/test_reporting_views.py`:
+  view existence, expected columns, grain uniqueness for `vw_run_kpi_flat`
+  and `vw_run_summary`, success-only filter on `vw_hardware_efficiency`,
+  derived-metric formula consistency, `severity_rank` determinism,
+  `success_pct` range bounds, refresh idempotency
+
+### Test coverage
+- 94 tests pass (up from 73 after Day 6, +21 new integration tests).
+
 ## [0.6.0] — Day 6: REST API (FastAPI + JWT + RBAC)
 ### Added
 - `benchlens/api/` package:

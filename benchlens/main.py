@@ -308,6 +308,54 @@ def ingest(
         console.print(f"[green]Watermark committed:[/green] {result.new_watermark}")
 
 
+# ---------- reports subcommands ----------
+
+reports_app = typer.Typer(help="Reporting views + Power BI helpers.", no_args_is_help=True)
+app.add_typer(reports_app, name="reports")
+
+views_app = typer.Typer(help="Manage Power BI-facing SQL views.", no_args_is_help=True)
+reports_app.add_typer(views_app, name="views")
+
+
+@views_app.command("check")
+def reports_views_check() -> None:
+    """List reporting views with existence + row counts."""
+    from benchlens.reports import check_views
+
+    infos = check_views()
+    table = Table(title="Reporting views", show_header=True, header_style="bold cyan")
+    table.add_column("View")
+    table.add_column("Installed")
+    table.add_column("Rows", justify="right")
+    table.add_column("Description")
+    missing = 0
+    for info in infos:
+        installed = "[green]yes[/green]" if info.exists else "[red]no[/red]"
+        rows = "" if info.row_count is None else f"{info.row_count:,}"
+        if not info.exists:
+            missing += 1
+        table.add_row(info.name, installed, rows, info.description)
+    console.print(table)
+    if missing:
+        console.print(
+            f"[yellow]{missing} view(s) missing.[/yellow] "
+            "Run [bold]benchlens reports views refresh[/bold] to (re)install."
+        )
+        raise typer.Exit(code=1)
+
+
+@views_app.command("refresh")
+def reports_views_refresh() -> None:
+    """(Re)create all reporting views from migration 003."""
+    from benchlens.reports import refresh_views
+
+    names = refresh_views()
+    console.print(
+        f"[green]Refreshed[/green] {len(names)} reporting view(s): "
+        + ", ".join(names)
+    )
+
+
 @app.command()
 def serve(
     host: str = typer.Option("0.0.0.0", help="API bind host."),
