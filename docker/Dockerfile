@@ -56,12 +56,16 @@ WORKDIR /app
 COPY --from=builder /opt/venv /opt/venv
 COPY --from=builder /app /app
 
-# Runtime-only directories the app writes to.
+# Runtime config + scripts (data dirs are created empty; populated at runtime).
 COPY config ./config
 COPY scripts ./scripts
-COPY data ./data
 
-RUN mkdir -p /app/logs /app/data/raw_extracts /app/data/quarantine && \
+RUN mkdir -p /app/logs \
+             /app/data/raw \
+             /app/data/raw_extracts \
+             /app/data/state \
+             /app/data/staging \
+             /app/data/quarantine && \
     chown -R benchlens:benchlens /app
 
 USER benchlens
