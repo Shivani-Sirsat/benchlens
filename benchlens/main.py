@@ -77,6 +77,15 @@ def db_ping() -> None:
 @db_app.command("bootstrap")
 def db_bootstrap() -> None:
     """Create the warehouse schema, load seed data, and apply migrations."""
+    import sys
+    from pathlib import Path
+
+    # `scripts/` sits at repo root, not inside the installed `benchlens` package,
+    # so the console-script entry point can't import it without help.
+    repo_root = str(Path(__file__).resolve().parent.parent)
+    if repo_root not in sys.path:
+        sys.path.insert(0, repo_root)
+
     from scripts.bootstrap_db import main as run_bootstrap
 
     code = run_bootstrap()
