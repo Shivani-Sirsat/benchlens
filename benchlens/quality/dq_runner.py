@@ -15,18 +15,17 @@ Outputs:
 
 from __future__ import annotations
 
+from collections.abc import Iterable
 from dataclasses import dataclass, field
 from decimal import Decimal
-from typing import TYPE_CHECKING, Iterable
+from typing import TYPE_CHECKING
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from benchlens.quality.regression import RegressionDetector
 from benchlens.quality.rules import (
-    FreshnessRule,
     RangeRule,
-    RegressionRule,
     RuleSet,
     load_rules,
 )
@@ -67,7 +66,7 @@ class DQRunner:
         session: Session,
         *,
         rules: RuleSet | None = None,
-        alert_manager: "AlertManager | None" = None,
+        alert_manager: AlertManager | None = None,
         log_id: int | None = None,
         source_name: str | None = None,
     ) -> None:
@@ -100,7 +99,10 @@ class DQRunner:
 
         log.info(
             "[dq] evaluated %d rules over %d run_ids -> %d findings (%s)",
-            len(self.rules), len(run_ids), len(findings), by_sev or "clean",
+            len(self.rules),
+            len(run_ids),
+            len(findings),
+            by_sev or "clean",
         )
         return DQResult(
             rules_evaluated=len(self.rules),

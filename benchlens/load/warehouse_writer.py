@@ -16,7 +16,7 @@ Session by default).
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import pandas as pd
 from sqlalchemy.dialects.postgresql import insert
@@ -100,38 +100,47 @@ class WarehouseWriter:
                 skipped.append(reason)
                 continue
 
-            started_at: datetime = r["started_at"].to_pydatetime() \
-                if hasattr(r["started_at"], "to_pydatetime") else r["started_at"]
+            started_at: datetime = (
+                r["started_at"].to_pydatetime()
+                if hasattr(r["started_at"], "to_pydatetime")
+                else r["started_at"]
+            )
             if started_at.tzinfo is None:
-                started_at = started_at.replace(tzinfo=timezone.utc)
+                started_at = started_at.replace(tzinfo=UTC)
             run_date = started_at.date()
 
             ended_at = r.get("ended_at")
-            if ended_at is not None and hasattr(ended_at, "to_pydatetime") and not pd.isna(ended_at):
+            if (
+                ended_at is not None
+                and hasattr(ended_at, "to_pydatetime")
+                and not pd.isna(ended_at)
+            ):
                 ended_at = ended_at.to_pydatetime()
                 if ended_at.tzinfo is None:
-                    ended_at = ended_at.replace(tzinfo=timezone.utc)
+                    ended_at = ended_at.replace(tzinfo=UTC)
             else:
                 ended_at = None
 
-            rows.append({
-                "workload_id": workload_id,
-                "hardware_id": hardware_id,
-                "stack_id": self._resolver.stack_id(_clean(r.get("stack_code"))),
-                "model_id": self._resolver.model_id(_clean(r.get("model_code"))),
-                "date_id": DimensionResolver.date_id(run_date),
-                "run_date": run_date,
-                "started_at": started_at,
-                "duration_s": _clean_numeric(r.get("duration_s")),
-                "run_status": r["run_status"],
-                "error_message": _clean(r.get("error_message")),
-                "notes": _clean(r.get("notes")),
-                "source_name": self._source_name,
-                "source_record_key": str(r["source_record_key"]),
-            })
+            rows.append(
+                {
+                    "workload_id": workload_id,
+                    "hardware_id": hardware_id,
+                    "stack_id": self._resolver.stack_id(_clean(r.get("stack_code"))),
+                    "model_id": self._resolver.model_id(_clean(r.get("model_code"))),
+                    "date_id": DimensionResolver.date_id(run_date),
+                    "run_date": run_date,
+                    "started_at": started_at,
+                    "duration_s": _clean_numeric(r.get("duration_s")),
+                    "run_status": r["run_status"],
+                    "error_message": _clean(r.get("error_message")),
+                    "notes": _clean(r.get("notes")),
+                    "source_name": self._source_name,
+                    "source_record_key": str(r["source_record_key"]),
+                }
+            )
         return rows, skipped
 
-    def _upsert_runs(self, payloads: list[dict]) -> dict[tuple[str, "datetime.date"], int]:  # type: ignore[name-defined]
+    def _upsert_runs(self, payloads: list[dict]) -> dict[tuple[str, datetime.date], int]:  # type: ignore[name-defined]
         """Upsert fact_benchmark_run rows; return {(source_record_key, run_date): run_id}."""
         table = FactBenchmarkRun.__table__
         stmt = insert(table).values(payloads)
@@ -139,10 +148,18 @@ class WarehouseWriter:
         update_cols = {
             c.name: stmt.excluded[c.name]
             for c in table.columns
-            if c.name in {
-                "workload_id", "hardware_id", "stack_id", "model_id",
-                "date_id", "started_at", "duration_s", "run_status",
-                "error_message", "notes",
+            if c.name
+            in {
+                "workload_id",
+                "hardware_id",
+                "stack_id",
+                "model_id",
+                "date_id",
+                "started_at",
+                "duration_s",
+                "run_status",
+                "error_message",
+                "notes",
             }
         }
         stmt = stmt.on_conflict_do_update(
@@ -160,7 +177,7 @@ class WarehouseWriter:
     def _build_kpi_rows(
         self,
         kpis: pd.DataFrame,
-        key_to_run_id: dict[tuple[str, "datetime.date"], int],  # type: ignore[name-defined]
+        key_to_run_id: dict[tuple[str, datetime.date], int],  # type: ignore[name-defined]
         run_payloads: list[dict],
     ) -> list[dict]:
         if kpis.empty:

@@ -14,7 +14,7 @@ Skips automatically if Postgres is unreachable.
 
 from __future__ import annotations
 
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 import pytest
@@ -36,30 +36,42 @@ pytestmark = pytest.mark.skipif(
 )
 
 
-def _make_csv(path: Path, *, run_id_prefix: str, base_time: datetime, throughputs: list[float]) -> Path:
+def _make_csv(
+    path: Path, *, run_id_prefix: str, base_time: datetime, throughputs: list[float]
+) -> Path:
     """Write a CSV with one row per throughput value, all on the same cohort."""
     headers = [
-        "run_id", "workload_code", "hardware_code", "model_code", "stack_code",
-        "started_at", "duration_s", "run_status", "throughput",
-        "tokens_per_sec", "gpu_util_pct",
+        "run_id",
+        "workload_code",
+        "hardware_code",
+        "model_code",
+        "stack_code",
+        "started_at",
+        "duration_s",
+        "run_status",
+        "throughput",
+        "tokens_per_sec",
+        "gpu_util_pct",
     ]
     lines = [",".join(headers)]
     for i, tput in enumerate(throughputs):
         started = base_time + timedelta(hours=i)
         lines.append(
-            ",".join([
-                f"{run_id_prefix}-{i:02d}",
-                "llama-inference-7b",
-                "gpu-nv-rtx4090",
-                "llama3-8b-fp16",
-                "pytorch-2.5-cuda12",
-                started.isoformat(),
-                "12.5",
-                "success",
-                f"{tput}",
-                f"{tput * 2.5}",
-                "92.0",
-            ])
+            ",".join(
+                [
+                    f"{run_id_prefix}-{i:02d}",
+                    "llama-inference-7b",
+                    "gpu-nv-rtx4090",
+                    "llama3-8b-fp16",
+                    "pytorch-2.5-cuda12",
+                    started.isoformat(),
+                    "12.5",
+                    "success",
+                    f"{tput}",
+                    f"{tput * 2.5}",
+                    "92.0",
+                ]
+            )
         )
     path.write_text("\n".join(lines) + "\n", encoding="utf-8")
     return path
@@ -68,14 +80,16 @@ def _make_csv(path: Path, *, run_id_prefix: str, base_time: datetime, throughput
 @pytest.fixture(autouse=True)
 def _cleanup() -> None:
     """Remove rows from any prior run so the test is deterministic."""
+
     def _purge() -> None:
         with session_scope() as s:
             s.execute(
                 delete(QualityCheckResult).where(QualityCheckResult.source_name == SOURCE_NAME)
             )
             runs = s.execute(
-                select(FactBenchmarkRun.run_id, FactBenchmarkRun.run_date)
-                .where(FactBenchmarkRun.source_name == SOURCE_NAME)
+                select(FactBenchmarkRun.run_id, FactBenchmarkRun.run_date).where(
+                    FactBenchmarkRun.source_name == SOURCE_NAME
+                )
             ).all()
             if runs:
                 ids = [r.run_id for r in runs]
@@ -87,13 +101,10 @@ def _cleanup() -> None:
                     )
                 )
                 s.execute(
-                    delete(FactBenchmarkRun).where(
-                        FactBenchmarkRun.source_name == SOURCE_NAME
-                    )
+                    delete(FactBenchmarkRun).where(FactBenchmarkRun.source_name == SOURCE_NAME)
                 )
-            s.execute(
-                delete(EtlRunLog).where(EtlRunLog.source_name == SOURCE_NAME)
-            )
+            s.execute(delete(EtlRunLog).where(EtlRunLog.source_name == SOURCE_NAME))
+
     _purge()
     yield
     _purge()
@@ -109,9 +120,7 @@ def _stage_source(monkeypatch: pytest.MonkeyPatch, dir_path: Path) -> None:
         "watermark_field": "started_at",
         "mapping": {"source_record_key": "run_id"},
     }
-    monkeypatch.setattr(
-        "benchlens.ingestion.factory.load_source_config", lambda name: fake_source
-    )
+    monkeypatch.setattr("benchlens.ingestion.factory.load_source_config", lambda name: fake_source)
     monkeypatch.setattr(
         "benchlens.orchestration.pipeline_runner.load_source_config",
         lambda name: fake_source,
@@ -130,7 +139,7 @@ def test_regression_is_detected_persisted_and_alerted(
     # 1. Stage and run a CLEAN baseline batch.
     baseline_dir = tmp_path / "baseline"
     baseline_dir.mkdir()
-    base_time = datetime(2025, 6, 1, 9, 0, tzinfo=timezone.utc)
+    base_time = datetime(2025, 6, 1, 9, 0, tzinfo=UTC)
     _make_csv(
         baseline_dir / "baseline.csv",
         run_id_prefix="bl",
@@ -143,6 +152,7 @@ def test_regression_is_detected_persisted_and_alerted(
 
     class CaptureSink(AlertSink):
         name = "capture"
+
         def emit(self, finding: Finding) -> None:
             captured.append(finding)
 
@@ -177,14 +187,17 @@ def test_regression_is_detected_persisted_and_alerted(
 
     # 4. Finding must be persisted to quality_check_result.
     with session_scope() as s:
-        persisted = s.execute(
-            select(QualityCheckResult)
-            .where(
-                QualityCheckResult.source_name == SOURCE_NAME,
-                QualityCheckResult.rule_type == "regression",
-                QualityCheckResult.rule_id == "throughput_regression",
+        persisted = (
+            s.execute(
+                select(QualityCheckResult).where(
+                    QualityCheckResult.source_name == SOURCE_NAME,
+                    QualityCheckResult.rule_type == "regression",
+                    QualityCheckResult.rule_id == "throughput_regression",
+                )
             )
-        ).scalars().all()
+            .scalars()
+            .all()
+        )
         assert len(persisted) >= 1
         f = persisted[0]
         assert f.kpi_code == "throughput"

@@ -11,7 +11,6 @@ from sqlalchemy.orm import Session
 
 from benchlens.api.auth import (
     AuthError,
-    ForbiddenError,
     JwtConfig,
     User,
     UserStore,

@@ -19,7 +19,9 @@ def list_etl_runs(
     user: CurrentUser,  # noqa: ARG001
     db: DbSession,
     source_name: Annotated[str | None, Query()] = None,
-    status_filter: Annotated[str | None, Query(alias="status", description="started|success|failed")] = None,
+    status_filter: Annotated[
+        str | None, Query(alias="status", description="started|success|failed")
+    ] = None,
     limit: Annotated[int, Query(ge=1, le=500)] = 50,
     offset: Annotated[int, Query(ge=0)] = 0,
 ) -> EtlRunPage:
@@ -33,9 +35,11 @@ def list_etl_runs(
         count_q = count_q.where(EtlRunLog.status == status_filter)
 
     total = int(db.execute(count_q).scalar_one())
-    rows = db.execute(
-        stmt.order_by(EtlRunLog.started_at.desc()).limit(limit).offset(offset)
-    ).scalars().all()
+    rows = (
+        db.execute(stmt.order_by(EtlRunLog.started_at.desc()).limit(limit).offset(offset))
+        .scalars()
+        .all()
+    )
     return EtlRunPage(
         items=[EtlRunOut.model_validate(r) for r in rows],
         meta=PageMeta(total=total, limit=limit, offset=offset),

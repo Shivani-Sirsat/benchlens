@@ -25,60 +25,126 @@ pytestmark = pytest.mark.skipif(
 EXPECTED_COLUMNS: dict[str, set[str]] = {
     # ---------- Day 7 ----------
     "vw_run_kpi_flat": {
-        "run_id", "run_date", "run_status",
-        "workload_code", "hardware_code", "kpi_code",
-        "kpi_value", "accelerator_type", "kpi_direction",
+        "run_id",
+        "run_date",
+        "run_status",
+        "workload_code",
+        "hardware_code",
+        "kpi_code",
+        "kpi_value",
+        "accelerator_type",
+        "kpi_direction",
     },
     "vw_run_summary": {
-        "run_id", "run_date", "run_status",
-        "workload_code", "hardware_code",
-        "primary_kpi_code", "primary_kpi_value", "primary_kpi_direction",
+        "run_id",
+        "run_date",
+        "run_status",
+        "workload_code",
+        "hardware_code",
+        "primary_kpi_code",
+        "primary_kpi_value",
+        "primary_kpi_direction",
     },
     "vw_hardware_efficiency": {
-        "run_id", "hardware_code", "accelerator_type",
-        "primary_throughput", "throughput_per_watt",
-        "throughput_per_kdollar", "tdp_watts", "price_usd",
+        "run_id",
+        "hardware_code",
+        "accelerator_type",
+        "primary_throughput",
+        "throughput_per_watt",
+        "throughput_per_kdollar",
+        "tdp_watts",
+        "price_usd",
     },
     "vw_kpi_trend_daily": {
-        "run_date", "workload_code", "hardware_code", "kpi_code",
-        "kpi_value_avg", "kpi_value_min", "kpi_value_max", "run_count",
+        "run_date",
+        "workload_code",
+        "hardware_code",
+        "kpi_code",
+        "kpi_value_avg",
+        "kpi_value_min",
+        "kpi_value_max",
+        "run_count",
     },
     "vw_regression_summary": {
-        "check_id", "detected_at", "detected_date",
-        "rule_id", "rule_type", "severity", "severity_rank",
-        "workload_code", "hardware_code", "kpi_code",
+        "check_id",
+        "detected_at",
+        "detected_date",
+        "rule_id",
+        "rule_type",
+        "severity",
+        "severity_rank",
+        "workload_code",
+        "hardware_code",
+        "kpi_code",
     },
     "vw_etl_health": {
-        "run_date", "source_name", "pipeline",
-        "success_runs", "failed_runs", "total_runs", "success_pct",
+        "run_date",
+        "source_name",
+        "pipeline",
+        "success_runs",
+        "failed_runs",
+        "total_runs",
+        "success_pct",
     },
     # ---------- Day 8 ----------
     "vw_model_perf_pivot": {
-        "model_id", "model_code", "model_family", "parameter_count",
-        "workload_code", "hardware_code", "kpi_code",
-        "kpi_value_avg", "throughput_per_million_params",
+        "model_id",
+        "model_code",
+        "model_family",
+        "parameter_count",
+        "workload_code",
+        "hardware_code",
+        "kpi_code",
+        "kpi_value_avg",
+        "throughput_per_million_params",
     },
     "vw_model_comparison_matrix": {
-        "model_id", "model_code", "model_family", "parameter_count",
-        "run_count", "avg_throughput", "avg_latency_ms",
-        "avg_throughput_per_watt", "throughput_per_million_params",
-        "throughput_per_kdollar", "last_run_date",
+        "model_id",
+        "model_code",
+        "model_family",
+        "parameter_count",
+        "run_count",
+        "avg_throughput",
+        "avg_latency_ms",
+        "avg_throughput_per_watt",
+        "throughput_per_million_params",
+        "throughput_per_kdollar",
+        "last_run_date",
     },
     "vw_run_reliability": {
-        "workload_code", "hardware_code", "accelerator_type",
-        "total_runs", "success_runs", "failure_runs",
-        "success_pct", "failure_pct", "mtbf_hours",
-        "first_run_at", "last_run_at", "last_failure_at",
+        "workload_code",
+        "hardware_code",
+        "accelerator_type",
+        "total_runs",
+        "success_runs",
+        "failure_runs",
+        "success_pct",
+        "failure_pct",
+        "mtbf_hours",
+        "first_run_at",
+        "last_run_at",
+        "last_failure_at",
     },
     "vw_regression_trend_daily": {
-        "detected_date", "severity", "rule_type",
-        "workload_code", "kpi_code",
-        "finding_count", "avg_deviation_pct", "max_abs_deviation_pct",
+        "detected_date",
+        "severity",
+        "rule_type",
+        "workload_code",
+        "kpi_code",
+        "finding_count",
+        "avg_deviation_pct",
+        "max_abs_deviation_pct",
     },
     "vw_regression_detection_lag": {
-        "check_id", "detected_at", "detected_date",
-        "rule_id", "severity", "kpi_code",
-        "run_id", "run_started_at", "detection_lag_minutes",
+        "check_id",
+        "detected_at",
+        "detected_date",
+        "rule_id",
+        "severity",
+        "kpi_code",
+        "run_id",
+        "run_started_at",
+        "detection_lag_minutes",
     },
 }
 
@@ -169,10 +235,7 @@ def test_hardware_efficiency_only_successful_runs():
     engine = get_engine()
     with engine.connect() as conn:
         bad = conn.execute(
-            text(
-                "SELECT COUNT(*) FROM vw_hardware_efficiency "
-                "WHERE run_status <> 'success'"
-            )
+            text("SELECT COUNT(*) FROM vw_hardware_efficiency WHERE run_status <> 'success'")
         ).scalar_one()
     assert bad == 0
 
@@ -223,10 +286,7 @@ def test_etl_health_success_pct_in_range():
     engine = get_engine()
     with engine.connect() as conn:
         bad = conn.execute(
-            text(
-                "SELECT COUNT(*) FROM vw_etl_health "
-                "WHERE success_pct < 0 OR success_pct > 100"
-            )
+            text("SELECT COUNT(*) FROM vw_etl_health WHERE success_pct < 0 OR success_pct > 100")
         ).scalar_one()
     assert bad == 0
 
@@ -240,6 +300,7 @@ def test_refresh_views_is_idempotent():
 
 
 # ============================ Day 8 view invariants ==========================
+
 
 def test_model_perf_pivot_grain_unique():
     """Grain: one row per (model_id, workload_code, hardware_code, kpi_code)."""
@@ -344,10 +405,7 @@ def test_regression_trend_daily_finding_counts_positive():
     engine = get_engine()
     with engine.connect() as conn:
         bad = conn.execute(
-            text(
-                "SELECT COUNT(*) FROM vw_regression_trend_daily "
-                "WHERE finding_count <= 0"
-            )
+            text("SELECT COUNT(*) FROM vw_regression_trend_daily WHERE finding_count <= 0")
         ).scalar_one()
     assert bad == 0
 

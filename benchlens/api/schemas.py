@@ -12,12 +12,14 @@ from pydantic import BaseModel, ConfigDict, Field
 
 class _BaseOut(BaseModel):
     """Shared config: read attributes off ORM rows."""
+
     model_config = ConfigDict(from_attributes=True)
 
 
 # ---------------------------------------------------------------------------
 # Auth
 # ---------------------------------------------------------------------------
+
 
 class TokenOut(BaseModel):
     access_token: str
@@ -35,6 +37,7 @@ class UserOut(BaseModel):
 # ---------------------------------------------------------------------------
 # Dimensions
 # ---------------------------------------------------------------------------
+
 
 class WorkloadOut(_BaseOut):
     workload_id: int
@@ -93,6 +96,7 @@ class KpiOut(_BaseOut):
 # Facts / runs
 # ---------------------------------------------------------------------------
 
+
 class KpiValueOut(BaseModel):
     kpi_code: str
     kpi_name: str
@@ -134,6 +138,7 @@ class RunPage(BaseModel):
 # ---------------------------------------------------------------------------
 # Quality
 # ---------------------------------------------------------------------------
+
 
 class QualityFindingOut(_BaseOut):
     check_id: int
@@ -182,6 +187,7 @@ class RuleOut(BaseModel):
 # ETL audit log
 # ---------------------------------------------------------------------------
 
+
 class EtlRunOut(_BaseOut):
     log_id: int
     source_name: str
@@ -204,6 +210,7 @@ class EtlRunPage(BaseModel):
 # ---------------------------------------------------------------------------
 # System
 # ---------------------------------------------------------------------------
+
 
 class HealthOut(BaseModel):
     status: str

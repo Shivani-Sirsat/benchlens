@@ -8,7 +8,7 @@ from benchlens.alerts import AlertManager, ConsoleSink, FileSink
 from benchlens.ingestion import build_connector_by_name, load_source_config
 from benchlens.load import EtlAudit, LoadResult, WarehouseWriter
 from benchlens.load.dim_resolver import DimensionResolver
-from benchlens.quality import DQResult, DQRunner, load_rules
+from benchlens.quality import DQResult, DQRunner
 from benchlens.transform import TransformResult, transform
 from benchlens.utils.db import session_scope
 from benchlens.utils.logger import get_logger
@@ -79,12 +79,14 @@ def run_pipeline(
             load_result: LoadResult = writer.write(transform_result)
 
             audit.rows_out = load_result.runs_upserted
-            audit.extra.update({
-                "connector": connector.kind,
-                "kpis_upserted": load_result.kpis_upserted,
-                "rows_skipped": load_result.rows_skipped,
-                "skipped_reasons": load_result.skipped_reasons[:20],
-            })
+            audit.extra.update(
+                {
+                    "connector": connector.kind,
+                    "kpis_upserted": load_result.kpis_upserted,
+                    "rows_skipped": load_result.rows_skipped,
+                    "skipped_reasons": load_result.skipped_reasons[:20],
+                }
+            )
 
             dq_result = DQResult(rules_evaluated=0)
             if run_quality and load_result.run_ids:
@@ -96,11 +98,13 @@ def run_pipeline(
                     source_name=source_name,
                 )
                 dq_result = runner.run(load_result.run_ids)
-                audit.extra.update({
-                    "dq_findings": dq_result.fail_count,
-                    "dq_by_severity": dq_result.by_severity,
-                    "dq_rules_evaluated": dq_result.rules_evaluated,
-                })
+                audit.extra.update(
+                    {
+                        "dq_findings": dq_result.fail_count,
+                        "dq_by_severity": dq_result.by_severity,
+                        "dq_rules_evaluated": dq_result.rules_evaluated,
+                    }
+                )
 
             summary = PipelineSummary(
                 source=source_name,
@@ -128,4 +132,3 @@ def run_pipeline(
 def _default_alert_manager() -> AlertManager:
     """Console + JSONL file sinks. Override by passing your own AlertManager."""
     return AlertManager(sinks=[ConsoleSink(), FileSink()])
-

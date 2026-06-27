@@ -40,9 +40,7 @@ def setup_logging(config_path: Path | str = _CONFIG_PATH) -> None:
             format="%(asctime)s | %(levelname)-8s | %(name)s | %(message)s",
             datefmt="%Y-%m-%d %H:%M:%S",
         )
-        logging.getLogger(__name__).warning(
-            "Logging config %s not found; using basicConfig.", path
-        )
+        logging.getLogger(__name__).warning("Logging config %s not found; using basicConfig.", path)
 
     _CONFIGURED = True
 

@@ -37,8 +37,7 @@ def build_connector(name: str, config: dict[str, Any]) -> BaseConnector:
         raise ConnectorError(f"Source {name!r} is missing the 'connector' field.")
     if kind not in _REGISTRY:
         raise ConnectorError(
-            f"Source {name!r} uses unknown connector {kind!r}. "
-            f"Available: {available_kinds()}"
+            f"Source {name!r} uses unknown connector {kind!r}. Available: {available_kinds()}"
         )
     cls = _REGISTRY[kind]
     return cls(name=name, config=config)

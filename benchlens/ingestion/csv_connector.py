@@ -64,6 +64,9 @@ class CSVConnector(BaseConnector):
         kept = df[mask].reset_index(drop=True)
         log.info(
             "[%s] watermark %r filtered %d/%d rows.",
-            self.name, watermark, len(kept), len(df),
+            self.name,
+            watermark,
+            len(kept),
+            len(df),
         )
         return kept

@@ -11,7 +11,7 @@ automatically:
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from types import TracebackType
 from typing import Any
 
@@ -45,19 +45,21 @@ class EtlAudit:
 
     # ----- context manager -----
 
-    def __enter__(self) -> "EtlAudit":
+    def __enter__(self) -> EtlAudit:
         self._log_row = EtlRunLog(
             source_name=self.source_name,
             pipeline=self.pipeline,
             status="started",
-            started_at=datetime.now(timezone.utc),
+            started_at=datetime.now(UTC),
             extra=self.extra or None,
         )
         self._session.add(self._log_row)
         self._session.flush()  # populate log_id without committing
         log.info(
             "[%s/%s] audit row %d (started)",
-            self.source_name, self.pipeline, self._log_row.log_id,
+            self.source_name,
+            self.pipeline,
+            self._log_row.log_id,
         )
         return self
 
@@ -68,7 +70,7 @@ class EtlAudit:
         tb: TracebackType | None,
     ) -> bool:
         assert self._log_row is not None
-        self._log_row.ended_at = datetime.now(timezone.utc)
+        self._log_row.ended_at = datetime.now(UTC)
         self._log_row.rows_in = self.rows_in
         self._log_row.rows_out = self.rows_out
         self._log_row.rows_quarantined = self.rows_quarantined
@@ -78,15 +80,20 @@ class EtlAudit:
             self._log_row.status = "success"
             log.info(
                 "[%s/%s] audit row %d (success rows_in=%s rows_out=%s)",
-                self.source_name, self.pipeline, self._log_row.log_id,
-                self.rows_in, self.rows_out,
+                self.source_name,
+                self.pipeline,
+                self._log_row.log_id,
+                self.rows_in,
+                self.rows_out,
             )
         else:
             self._log_row.status = "failed"
             self._log_row.error_message = f"{type(exc).__name__}: {exc}"[:2000]
             log.exception(
                 "[%s/%s] audit row %d (failed)",
-                self.source_name, self.pipeline, self._log_row.log_id,
+                self.source_name,
+                self.pipeline,
+                self._log_row.log_id,
             )
         # Never swallow; let the caller decide.
         return False

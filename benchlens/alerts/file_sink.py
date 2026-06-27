@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import json
 from dataclasses import asdict
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 from benchlens.alerts.base_sink import AlertSink
@@ -20,6 +20,6 @@ class FileSink(AlertSink):
 
     def emit(self, finding: Finding) -> None:
         record = asdict(finding)
-        record["emitted_at"] = datetime.now(timezone.utc).isoformat()
+        record["emitted_at"] = datetime.now(UTC).isoformat()
         with self.path.open("a", encoding="utf-8") as f:
             f.write(json.dumps(record, default=str) + "\n")

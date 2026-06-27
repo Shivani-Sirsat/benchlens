@@ -10,9 +10,9 @@ invalidate after a dimension change.
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from dataclasses import dataclass, field
 from datetime import date, datetime
-from typing import Mapping
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -74,8 +74,11 @@ class DimensionResolver:
         )
         log.info(
             "Dim cache loaded: workloads=%d hardware=%d stacks=%d models=%d kpis=%d",
-            len(out.workloads), len(out.hardware), len(out.stacks),
-            len(out.models), len(out.kpis),
+            len(out.workloads),
+            len(out.hardware),
+            len(out.stacks),
+            len(out.models),
+            len(out.kpis),
         )
         return out
 

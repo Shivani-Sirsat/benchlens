@@ -5,6 +5,8 @@ KPI values produced by a pipeline run, and yields `Finding` records that are
 persisted to `quality_check_result` and routed to alert sinks.
 """
 
+from benchlens.quality.dq_runner import DQResult, DQRunner
+from benchlens.quality.regression import RegressionDetector
 from benchlens.quality.rules import (
     FreshnessRule,
     RangeRule,
@@ -14,8 +16,6 @@ from benchlens.quality.rules import (
     load_rules,
 )
 from benchlens.quality.validators import Finding, check_freshness, check_range
-from benchlens.quality.regression import RegressionDetector
-from benchlens.quality.dq_runner import DQResult, DQRunner
 
 __all__ = [
     "Rule",
@@ -31,4 +31,3 @@ __all__ = [
     "DQRunner",
     "DQResult",
 ]
-

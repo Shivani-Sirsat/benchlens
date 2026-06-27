@@ -16,9 +16,6 @@ from benchlens.api.schemas import (
     RuleOut,
 )
 from benchlens.quality import (
-    FreshnessRule,
-    RangeRule,
-    RegressionRule,
     load_rules,
 )
 from benchlens.warehouse.models import QualityCheckResult
@@ -63,9 +60,11 @@ def list_findings(
         count_q = count_q.where(QualityCheckResult.detected_at >= since)
 
     total = int(db.execute(count_q).scalar_one())
-    rows = db.execute(
-        stmt.order_by(QualityCheckResult.detected_at.desc()).limit(limit).offset(offset)
-    ).scalars().all()
+    rows = (
+        db.execute(stmt.order_by(QualityCheckResult.detected_at.desc()).limit(limit).offset(offset))
+        .scalars()
+        .all()
+    )
 
     return QualityFindingPage(
         items=[QualityFindingOut.model_validate(r) for r in rows],
@@ -79,18 +78,37 @@ def list_rules(user: CurrentUser) -> list[RuleOut]:  # noqa: ARG001
     rs = load_rules()
     out: list[RuleOut] = []
     for r in rs.range_rules:
-        out.append(RuleOut(
-            id=r.id, type=r.type, severity=r.severity, description=r.description,
-            kpi_code=r.kpi_code, min=r.min, max=r.max,
-        ))
+        out.append(
+            RuleOut(
+                id=r.id,
+                type=r.type,
+                severity=r.severity,
+                description=r.description,
+                kpi_code=r.kpi_code,
+                min=r.min,
+                max=r.max,
+            )
+        )
     for r in rs.freshness_rules:
-        out.append(RuleOut(
-            id=r.id, type=r.type, severity=r.severity, description=r.description,
-            max_age_days=r.max_age_days,
-        ))
+        out.append(
+            RuleOut(
+                id=r.id,
+                type=r.type,
+                severity=r.severity,
+                description=r.description,
+                max_age_days=r.max_age_days,
+            )
+        )
     for r in rs.regression_rules:
-        out.append(RuleOut(
-            id=r.id, type=r.type, severity=r.severity, description=r.description,
-            kpi_code=r.kpi_code, baseline_runs=r.baseline_runs, threshold_pct=r.threshold_pct,
-        ))
+        out.append(
+            RuleOut(
+                id=r.id,
+                type=r.type,
+                severity=r.severity,
+                description=r.description,
+                kpi_code=r.kpi_code,
+                baseline_runs=r.baseline_runs,
+                threshold_pct=r.threshold_pct,
+            )
+        )
     return out

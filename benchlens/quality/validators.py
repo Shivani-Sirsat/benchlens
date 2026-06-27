@@ -7,7 +7,7 @@ no DB or config dependencies — easy to unit-test in isolation.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 from benchlens.quality.rules import FreshnessRule, RangeRule
@@ -16,6 +16,7 @@ from benchlens.quality.rules import FreshnessRule, RangeRule
 @dataclass(slots=True)
 class Finding:
     """One failed DQ check, ready to persist + alert."""
+
     rule_id: str
     rule_type: str
     severity: str
@@ -51,8 +52,10 @@ def check_range(
     if not (too_low or too_high):
         return None
 
-    bound = f"[{rule.min if rule.min is not None else '-inf'}, " \
-            f"{rule.max if rule.max is not None else '+inf'}]"
+    bound = (
+        f"[{rule.min if rule.min is not None else '-inf'}, "
+        f"{rule.max if rule.max is not None else '+inf'}]"
+    )
     msg = (
         f"{rule.kpi_code}={value} is outside allowed range {bound} "
         f"(workload={workload_code}, hw={hardware_code})."
@@ -83,9 +86,9 @@ def check_freshness(
     now: datetime | None = None,
 ) -> Finding | None:
     """Fail if the run is older than `rule.max_age_days`."""
-    ref = now or datetime.now(timezone.utc)
+    ref = now or datetime.now(UTC)
     if run_started_at.tzinfo is None:
-        run_started_at = run_started_at.replace(tzinfo=timezone.utc)
+        run_started_at = run_started_at.replace(tzinfo=UTC)
     age_days = (ref - run_started_at).total_seconds() / 86400.0
     if age_days <= rule.max_age_days:
         return None
@@ -100,8 +103,7 @@ def check_freshness(
         observed_value=round(age_days, 3),
         expected_max=float(rule.max_age_days),
         message=(
-            f"Run {source_record_key} is {age_days:.1f} days old "
-            f"(limit {rule.max_age_days})."
+            f"Run {source_record_key} is {age_days:.1f} days old (limit {rule.max_age_days})."
         ),
         extra={"run_started_at": run_started_at.isoformat()},
     )

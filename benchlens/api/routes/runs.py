@@ -86,20 +86,24 @@ def list_runs(
 
     if workload:
         base = base.where(DimWorkload.code == workload)
-        count_q = count_q.join(DimWorkload, DimWorkload.workload_id == FactBenchmarkRun.workload_id) \
-            .where(DimWorkload.code == workload)
+        count_q = count_q.join(
+            DimWorkload, DimWorkload.workload_id == FactBenchmarkRun.workload_id
+        ).where(DimWorkload.code == workload)
     if hardware:
         base = base.where(DimHardware.code == hardware)
-        count_q = count_q.join(DimHardware, DimHardware.hardware_id == FactBenchmarkRun.hardware_id) \
-            .where(DimHardware.code == hardware)
+        count_q = count_q.join(
+            DimHardware, DimHardware.hardware_id == FactBenchmarkRun.hardware_id
+        ).where(DimHardware.code == hardware)
     if model:
         base = base.where(DimModel.code == model)
-        count_q = count_q.join(DimModel, DimModel.model_id == FactBenchmarkRun.model_id) \
-            .where(DimModel.code == model)
+        count_q = count_q.join(DimModel, DimModel.model_id == FactBenchmarkRun.model_id).where(
+            DimModel.code == model
+        )
     if stack:
         base = base.where(DimStack.code == stack)
-        count_q = count_q.join(DimStack, DimStack.stack_id == FactBenchmarkRun.stack_id) \
-            .where(DimStack.code == stack)
+        count_q = count_q.join(DimStack, DimStack.stack_id == FactBenchmarkRun.stack_id).where(
+            DimStack.code == stack
+        )
     if run_status:
         base = base.where(FactBenchmarkRun.run_status == run_status)
         count_q = count_q.where(FactBenchmarkRun.run_status == run_status)
@@ -114,9 +118,11 @@ def list_runs(
         count_q = count_q.where(FactBenchmarkRun.source_name == source_name)
 
     total = int(db.execute(count_q).scalar_one())
-    rows = db.execute(
-        base.order_by(FactBenchmarkRun.started_at.desc()).limit(limit).offset(offset)
-    ).mappings().all()
+    rows = (
+        db.execute(base.order_by(FactBenchmarkRun.started_at.desc()).limit(limit).offset(offset))
+        .mappings()
+        .all()
+    )
 
     return RunPage(
         items=[_to_run_out(dict(r)) for r in rows],
@@ -136,43 +142,51 @@ def get_run(
     db: DbSession,
 ) -> RunDetailOut:
     """Single run + every KPI value persisted for it."""
-    row = db.execute(
-        select(
-            FactBenchmarkRun.run_id,
-            FactBenchmarkRun.run_uuid,
-            DimWorkload.code.label("workload_code"),
-            DimHardware.code.label("hardware_code"),
-            DimStack.code.label("stack_code"),
-            DimModel.code.label("model_code"),
-            FactBenchmarkRun.run_date,
-            FactBenchmarkRun.started_at,
-            FactBenchmarkRun.duration_s,
-            FactBenchmarkRun.run_status,
-            FactBenchmarkRun.source_name,
-            FactBenchmarkRun.source_record_key,
+    row = (
+        db.execute(
+            select(
+                FactBenchmarkRun.run_id,
+                FactBenchmarkRun.run_uuid,
+                DimWorkload.code.label("workload_code"),
+                DimHardware.code.label("hardware_code"),
+                DimStack.code.label("stack_code"),
+                DimModel.code.label("model_code"),
+                FactBenchmarkRun.run_date,
+                FactBenchmarkRun.started_at,
+                FactBenchmarkRun.duration_s,
+                FactBenchmarkRun.run_status,
+                FactBenchmarkRun.source_name,
+                FactBenchmarkRun.source_record_key,
+            )
+            .join(DimWorkload, DimWorkload.workload_id == FactBenchmarkRun.workload_id)
+            .join(DimHardware, DimHardware.hardware_id == FactBenchmarkRun.hardware_id)
+            .outerjoin(DimStack, DimStack.stack_id == FactBenchmarkRun.stack_id)
+            .outerjoin(DimModel, DimModel.model_id == FactBenchmarkRun.model_id)
+            .where(FactBenchmarkRun.run_id == run_id)
         )
-        .join(DimWorkload, DimWorkload.workload_id == FactBenchmarkRun.workload_id)
-        .join(DimHardware, DimHardware.hardware_id == FactBenchmarkRun.hardware_id)
-        .outerjoin(DimStack, DimStack.stack_id == FactBenchmarkRun.stack_id)
-        .outerjoin(DimModel, DimModel.model_id == FactBenchmarkRun.model_id)
-        .where(FactBenchmarkRun.run_id == run_id)
-    ).mappings().first()
+        .mappings()
+        .first()
+    )
 
     if row is None:
         raise HTTPException(status_code=404, detail=f"Run {run_id} not found.")
 
-    kpi_rows = db.execute(
-        select(
-            DimKpi.code.label("kpi_code"),
-            DimKpi.name.label("kpi_name"),
-            DimKpi.unit,
-            DimKpi.direction,
-            FactKpiValue.value,
+    kpi_rows = (
+        db.execute(
+            select(
+                DimKpi.code.label("kpi_code"),
+                DimKpi.name.label("kpi_name"),
+                DimKpi.unit,
+                DimKpi.direction,
+                FactKpiValue.value,
+            )
+            .join(DimKpi, DimKpi.kpi_id == FactKpiValue.kpi_id)
+            .where(FactKpiValue.run_id == run_id)
+            .order_by(DimKpi.code)
         )
-        .join(DimKpi, DimKpi.kpi_id == FactKpiValue.kpi_id)
-        .where(FactKpiValue.run_id == run_id)
-        .order_by(DimKpi.code)
-    ).mappings().all()
+        .mappings()
+        .all()
+    )
 
     return RunDetailOut(
         **_to_run_out(dict(row)).model_dump(),

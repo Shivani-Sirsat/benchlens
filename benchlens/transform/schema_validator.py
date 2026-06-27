@@ -46,11 +46,8 @@ def validate_runs(df: pd.DataFrame) -> ValidationResult:
     if missing_required:
         # Whole frame is invalid — annotate and quarantine everything.
         bad = df.copy()
-        bad["_quarantine_reason"] = (
-            f"missing required columns: {missing_required}"
-        )
-        log.warning("Quarantining %d rows; missing required columns %s",
-                    len(bad), missing_required)
+        bad["_quarantine_reason"] = f"missing required columns: {missing_required}"
+        log.warning("Quarantining %d rows; missing required columns %s", len(bad), missing_required)
         return ValidationResult(df.head(0), bad)
 
     work = df.copy()
@@ -65,9 +62,7 @@ def validate_runs(df: pd.DataFrame) -> ValidationResult:
         work["ended_at"] = pd.to_datetime(work["ended_at"], utc=True, errors="coerce")
 
     # ---- normalize run_status ----
-    work["run_status"] = (
-        work["run_status"].astype(str).str.strip().str.lower().map(STATUS_ALIAS)
-    )
+    work["run_status"] = work["run_status"].astype(str).str.strip().str.lower().map(STATUS_ALIAS)
 
     # ---- numeric coercions ----
     if "duration_s" in work.columns:
@@ -95,6 +90,8 @@ def validate_runs(df: pd.DataFrame) -> ValidationResult:
     # Make sure we keep only known canonical columns + KPI columns (anything else).
     known_meta = set(REQUIRED_RUN_COLUMNS) | set(OPTIONAL_RUN_COLUMNS) | {"_source_file"}
     log.info("Validation: %d valid, %d quarantined.", len(valid), len(quarantine))
-    log.debug("Known meta columns retained on valid rows: %s",
-              [c for c in valid.columns if c in known_meta])
+    log.debug(
+        "Known meta columns retained on valid rows: %s",
+        [c for c in valid.columns if c in known_meta],
+    )
     return ValidationResult(valid=valid, quarantine=quarantine)

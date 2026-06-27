@@ -32,6 +32,7 @@ from benchlens.warehouse.models import (
 @dataclass(slots=True)
 class _Candidate:
     """A KPI value to evaluate, with the cohort needed to fetch its baseline."""
+
     run_id: int
     run_date: object  # datetime.date
     workload_id: int
@@ -148,7 +149,8 @@ class RegressionDetector:
                 # exclude the candidate itself
                 FactKpiValue.run_id != cand.run_id,
                 # only count runs from before the candidate
-                FactBenchmarkRun.started_at < select(FactBenchmarkRun.started_at)
+                FactBenchmarkRun.started_at
+                < select(FactBenchmarkRun.started_at)
                 .where(FactBenchmarkRun.run_id == cand.run_id)
                 .scalar_subquery(),
             )
@@ -178,9 +180,7 @@ class RegressionDetector:
         deviation_pct = (cand.value - mean) / mean * 100.0
         is_regression = (
             cand.direction == "higher_is_better" and deviation_pct <= -rule.threshold_pct
-        ) or (
-            cand.direction == "lower_is_better" and deviation_pct >= rule.threshold_pct
-        )
+        ) or (cand.direction == "lower_is_better" and deviation_pct >= rule.threshold_pct)
         if not is_regression:
             return None
 

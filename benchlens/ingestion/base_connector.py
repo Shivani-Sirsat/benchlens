@@ -15,7 +15,7 @@ from __future__ import annotations
 import json
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -45,7 +45,7 @@ class IngestResult:
     connector: str
     records: pd.DataFrame
     new_watermark: Any = None
-    extracted_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+    extracted_at: datetime = field(default_factory=lambda: datetime.now(UTC))
 
     @property
     def rows(self) -> int:
@@ -105,7 +105,9 @@ class BaseConnector(ABC):
         new_watermark = self._compute_new_watermark(df, watermark)
         log.info(
             "[%s] extracted %d rows (new watermark=%r).",
-            self.name, len(df), new_watermark,
+            self.name,
+            len(df),
+            new_watermark,
         )
 
         return IngestResult(
@@ -121,7 +123,7 @@ class BaseConnector(ABC):
             return
         STATE_DIR.mkdir(parents=True, exist_ok=True)
         path = STATE_DIR / f"{self.name}.json"
-        payload = {"watermark": _serialize(value), "updated_at": datetime.now(timezone.utc).isoformat()}
+        payload = {"watermark": _serialize(value), "updated_at": datetime.now(UTC).isoformat()}
         path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
         log.debug("[%s] watermark committed: %s", self.name, path)
 

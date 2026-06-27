@@ -6,6 +6,64 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.0] — Day 9: Orchestration, containerization & CI/CD
+### Added
+- **`benchlens/scheduler/`** — APScheduler-based job scheduler that wraps
+  `run_pipeline()` for every `enabled: true` source in `config/sources.yaml`.
+  Cron expression comes from `scheduler.daily_ingest_cron` in
+  `config/settings.yaml`. Each source gets its own job so a failure in one
+  source doesn't block the others; job exceptions are logged and swallowed.
+  All schedules run in UTC.
+- **CLI**:
+  - `benchlens scheduler list` — preview the jobs that would be scheduled.
+  - `benchlens scheduler start` — start the blocking scheduler (Ctrl+C exits).
+- **`docker/Dockerfile`** — multi-stage build on `python:3.12-slim`:
+  - Stage 1 (`builder`) provisions a `/opt/venv` with all deps + an editable
+    install of the project so the `benchlens` console_script is wired up.
+  - Stage 2 (`runtime`) is a fresh slim image with the venv + source copied
+    in, a non-root `benchlens` user (uid 1000), and `ENTRYPOINT ["benchlens"]`
+    so the same image runs the API, the scheduler, or any one-shot CLI.
+- **`docker-compose.yml`** — full local stack (bumped Postgres 15 → 16-alpine
+  to match local dev):
+  - `postgres` (healthcheck via `pg_isready`)
+  - `bootstrap` — one-shot service that runs `benchlens db bootstrap` then
+    exits 0; downstream services wait via `service_completed_successfully`.
+  - `api` — `benchlens serve --host 0.0.0.0 --port 8000`, exposed on 8000,
+    with an HTTP healthcheck against `/health`.
+  - `scheduler` — `benchlens scheduler start`.
+- **`.dockerignore`** — trims the build context (no `.venv`, no `tests`,
+  no `powerbi`, no `.env`, no `__pycache__`).
+- **`.github/workflows/ci.yml`** — three-job pipeline:
+  - `lint` — `ruff check` + `ruff format --check` on `benchlens/` and
+    `scripts/`.
+  - `test` — Postgres-16 service container + `benchlens db bootstrap` +
+    `pytest --cov`, all on Python 3.12.
+  - `docker` — `docker/build-push-action` validates the Dockerfile (no push)
+    with GitHub Actions cache for fast subsequent builds.
+- **`.pre-commit-config.yaml`** — `ruff` + `ruff-format` + standard
+  whitespace/EOF hygiene hooks. `pre-commit install` for local enforcement.
+- **`tests/unit/test_scheduler.py`** — 7 new unit tests covering:
+  - `JobRegistry` ordering, length, and iteration.
+  - `JobConfig` mutable-default isolation (one `kwargs` dict per instance).
+  - Only `enabled: true` sources from `sources.yaml` get scheduled.
+  - Every cron expression in the live registry parses through
+    `CronTrigger.from_crontab`.
+  - Every scheduled job is wired to the `_ingest_job` wrapper with a single
+    string positional arg, and job_id matches `f"ingest_{source_name}"`.
+
+### Changed
+- `docker-compose.yml` upgraded from `postgres:15-alpine` to
+  `postgres:16-alpine` to match the local native install and CI service.
+
+### Why APScheduler instead of Prefect/Airflow?
+For a single-host demo where every job is a cron-triggered Python call,
+APScheduler ships as a single `pip install` with no server process — the
+job state lives in the same container as the worker. Prefect/Airflow add
+a control-plane component (server, agent, scheduler DB) that's pure
+overhead at this scale. The `Scheduler*` abstraction in
+`benchlens/scheduler/` is intentionally thin, so swapping in Prefect later
+would only touch `runner.py`.
+
 ## [0.8.0] — Day 8: Power BI dashboards 3 & 4 + Phase 5 reporting views
 ### Added
 - Migration `004_reporting_views_day8.sql` — 5 new BI-facing views:

@@ -9,4 +9,3 @@ from benchlens.alerts.file_sink import FileSink
 from benchlens.alerts.manager import AlertManager
 
 __all__ = ["AlertSink", "ConsoleSink", "FileSink", "AlertManager"]
-

@@ -8,11 +8,10 @@ from __future__ import annotations
 
 import json
 import shutil
+from collections.abc import Iterator
 from pathlib import Path
-from typing import Iterator
 
 import httpx
-import pandas as pd
 import pytest
 
 from benchlens.ingestion import (
@@ -25,7 +24,6 @@ from benchlens.ingestion import (
     available_kinds,
     build_connector,
 )
-from benchlens.ingestion.base_connector import STATE_DIR
 
 FIXTURES = Path(__file__).resolve().parents[1] / "fixtures"
 
@@ -199,13 +197,11 @@ def test_sql_connector_reads_sqlite(tmp_path: Path) -> None:
     url = f"sqlite:///{db.as_posix()}"
 
     # Seed an external SQLite DB.
-    from sqlalchemy import create_engine, text
+    from sqlalchemy import create_engine
 
     eng = create_engine(url, future=True)
     with eng.begin() as conn:
-        conn.exec_driver_sql(
-            "CREATE TABLE runs (id INTEGER PRIMARY KEY, name TEXT, ts TEXT)"
-        )
+        conn.exec_driver_sql("CREATE TABLE runs (id INTEGER PRIMARY KEY, name TEXT, ts TEXT)")
         conn.exec_driver_sql(
             "INSERT INTO runs (name, ts) VALUES "
             "('a','2025-01-01'), ('b','2025-01-02'), ('c','2025-01-03')"

@@ -15,7 +15,7 @@ import hashlib
 import hmac
 import os
 from dataclasses import dataclass
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
 import jwt
@@ -36,7 +36,7 @@ class ForbiddenError(Exception):
 # Password hashing (scrypt)
 # ---------------------------------------------------------------------------
 
-_SCRYPT_N = 2 ** 14
+_SCRYPT_N = 2**14
 _SCRYPT_R = 8
 _SCRYPT_P = 1
 _SCRYPT_LEN = 64
@@ -108,7 +108,7 @@ class UserStore:
         self._users: dict[str, User] = dict(users or {})
 
     @classmethod
-    def from_settings(cls) -> "UserStore":
+    def from_settings(cls) -> UserStore:
         """Build from `api.users` in settings.yaml. Falls back to demo accounts."""
         cfg = load_config("settings")
         api_cfg = cfg.get("api") or {}
@@ -148,6 +148,7 @@ class UserStore:
 # JWT helpers
 # ---------------------------------------------------------------------------
 
+
 @dataclass(frozen=True, slots=True)
 class JwtConfig:
     secret: str
@@ -155,7 +156,7 @@ class JwtConfig:
     expires_minutes: int
 
     @classmethod
-    def from_settings(cls) -> "JwtConfig":
+    def from_settings(cls) -> JwtConfig:
         cfg = load_config("settings")
         jcfg = (cfg.get("api") or {}).get("jwt") or {}
         return cls(
@@ -167,7 +168,7 @@ class JwtConfig:
 
 def create_access_token(user: User, *, config: JwtConfig) -> tuple[str, datetime]:
     """Returns (token, expires_at)."""
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     exp = now + timedelta(minutes=config.expires_minutes)
     payload: dict[str, Any] = {
         "sub": user.username,

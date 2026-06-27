@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import pandas as pd
-import pytest
 
 from benchlens.transform import (
     REQUIRED_RUN_COLUMNS,
@@ -15,10 +14,10 @@ from benchlens.transform import (
     validate_runs,
 )
 
-
 # ---------------------------------------------------------------------------
 # Field mapping
 # ---------------------------------------------------------------------------
+
 
 def test_field_mapping_renames_known_columns() -> None:
     df = pd.DataFrame({"workload_name": ["a"], "latency_ms": [10.0], "other": [1]})
@@ -46,6 +45,7 @@ def test_strip_prefix() -> None:
 # Schema validation
 # ---------------------------------------------------------------------------
 
+
 def _good_row(**overrides) -> dict:
     base = {
         "source_record_key": "r1",
@@ -67,7 +67,9 @@ def test_validate_runs_passes_clean_rows() -> None:
 
 
 def test_validate_runs_aliases_status() -> None:
-    df = pd.DataFrame([_good_row(run_status="FAILED"), _good_row(source_record_key="r2", run_status="OK")])
+    df = pd.DataFrame(
+        [_good_row(run_status="FAILED"), _good_row(source_record_key="r2", run_status="OK")]
+    )
     result = validate_runs(df)
     assert list(result.valid["run_status"]) == ["fail", "success"]
 
@@ -81,8 +83,16 @@ def test_validate_runs_quarantines_unknown_status() -> None:
 
 
 def test_validate_runs_missing_required_column_quarantines_all() -> None:
-    df = pd.DataFrame([{"workload_code": "x", "hardware_code": "y",
-                        "started_at": "2025-01-01", "run_status": "success"}])
+    df = pd.DataFrame(
+        [
+            {
+                "workload_code": "x",
+                "hardware_code": "y",
+                "started_at": "2025-01-01",
+                "run_status": "success",
+            }
+        ]
+    )
     # missing source_record_key
     result = validate_runs(df)
     assert len(result.valid) == 0
@@ -101,11 +111,14 @@ def test_validate_runs_null_required_value_quarantines_row() -> None:
 # KPI normalization
 # ---------------------------------------------------------------------------
 
+
 def test_normalize_wide_to_long_basic() -> None:
-    df = pd.DataFrame([
-        _good_row(throughput=100.0, gpu_util_pct=80.0, power_watts_avg=400.0),
-        _good_row(source_record_key="r2", throughput=200.0),
-    ])
+    df = pd.DataFrame(
+        [
+            _good_row(throughput=100.0, gpu_util_pct=80.0, power_watts_avg=400.0),
+            _good_row(source_record_key="r2", throughput=200.0),
+        ]
+    )
     df["started_at"] = pd.to_datetime(df["started_at"], utc=True)
 
     result = normalize(df)
@@ -123,9 +136,11 @@ def test_normalize_wide_to_long_basic() -> None:
 
 
 def test_normalize_handles_nan_metric_cells() -> None:
-    df = pd.DataFrame([
-        _good_row(throughput=float("nan"), gpu_util_pct=50.0),
-    ])
+    df = pd.DataFrame(
+        [
+            _good_row(throughput=float("nan"), gpu_util_pct=50.0),
+        ]
+    )
     df["started_at"] = pd.to_datetime(df["started_at"], utc=True)
     result = normalize(df)
     assert len(result.kpis) == 1
@@ -150,20 +165,38 @@ def test_normalize_empty_input() -> None:
 # End-to-end transform
 # ---------------------------------------------------------------------------
 
+
 def test_transform_full_pipeline_csv_shape() -> None:
-    df = pd.DataFrame([
-        {"run_id": "r1", "workload_code": "llama2-inference",
-         "hardware_code": "nvidia-rtx-4090", "model_code": "llama-2-7b",
-         "stack_code": "pytorch", "started_at": "2025-10-01T08:00:00Z",
-         "ended_at": "2025-10-01T08:05:00Z", "duration_s": 300.0,
-         "run_status": "success", "throughput": 128.4,
-         "inference_time_ms": 12.5, "gpu_util_pct": 92.3},
-        {"run_id": "r2", "workload_code": "phi3-inference",
-         "hardware_code": "nvidia-rtx-4090", "model_code": "phi-3-mini",
-         "stack_code": "pytorch", "started_at": "2025-10-02T09:15:00Z",
-         "ended_at": "2025-10-02T09:18:00Z", "duration_s": 180.0,
-         "run_status": "success", "throughput": 210.5},
-    ])
+    df = pd.DataFrame(
+        [
+            {
+                "run_id": "r1",
+                "workload_code": "llama2-inference",
+                "hardware_code": "nvidia-rtx-4090",
+                "model_code": "llama-2-7b",
+                "stack_code": "pytorch",
+                "started_at": "2025-10-01T08:00:00Z",
+                "ended_at": "2025-10-01T08:05:00Z",
+                "duration_s": 300.0,
+                "run_status": "success",
+                "throughput": 128.4,
+                "inference_time_ms": 12.5,
+                "gpu_util_pct": 92.3,
+            },
+            {
+                "run_id": "r2",
+                "workload_code": "phi3-inference",
+                "hardware_code": "nvidia-rtx-4090",
+                "model_code": "phi-3-mini",
+                "stack_code": "pytorch",
+                "started_at": "2025-10-02T09:15:00Z",
+                "ended_at": "2025-10-02T09:18:00Z",
+                "duration_s": 180.0,
+                "run_status": "success",
+                "throughput": 210.5,
+            },
+        ]
+    )
     source_config = {"mapping": {"source_record_key": "run_id"}}
     result: TransformResult = transform(df, source_config)
     assert len(result.runs) == 2
@@ -173,13 +206,21 @@ def test_transform_full_pipeline_csv_shape() -> None:
 
 
 def test_transform_jsonl_shape_with_kpis_prefix() -> None:
-    df = pd.DataFrame([
-        {"run_id": "j1", "workload_code": "llama2-inference",
-         "hardware_code": "nvidia-rtx-4090", "model_code": "llama-2-7b",
-         "stack_code": "pytorch", "started_at": "2025-10-08T08:00:00Z",
-         "run_status": "success",
-         "kpis.throughput": 131.7, "kpis.tokens_per_sec": 2204.8},
-    ])
+    df = pd.DataFrame(
+        [
+            {
+                "run_id": "j1",
+                "workload_code": "llama2-inference",
+                "hardware_code": "nvidia-rtx-4090",
+                "model_code": "llama-2-7b",
+                "stack_code": "pytorch",
+                "started_at": "2025-10-08T08:00:00Z",
+                "run_status": "success",
+                "kpis.throughput": 131.7,
+                "kpis.tokens_per_sec": 2204.8,
+            },
+        ]
+    )
     source_config = {"mapping": {"source_record_key": "run_id"}}
     result = transform(df, source_config)
     assert len(result.runs) == 1

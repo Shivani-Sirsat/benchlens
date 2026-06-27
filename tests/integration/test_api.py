@@ -56,6 +56,7 @@ def _auth(token: str) -> dict[str, str]:
 # System
 # ---------------------------------------------------------------------------
 
+
 def test_health_is_public(client: TestClient) -> None:
     r = client.get("/health")
     assert r.status_code == 200
@@ -73,6 +74,7 @@ def test_root_is_public(client: TestClient) -> None:
 # ---------------------------------------------------------------------------
 # Auth
 # ---------------------------------------------------------------------------
+
 
 def test_login_rejects_bad_password(client: TestClient) -> None:
     r = client.post("/auth/login", data={"username": "admin", "password": "wrong"})
@@ -114,6 +116,7 @@ def test_invalid_token_rejected(client: TestClient) -> None:
 # ---------------------------------------------------------------------------
 # Dimensions
 # ---------------------------------------------------------------------------
+
 
 def test_list_kpis_requires_auth(client: TestClient) -> None:
     r = client.get("/kpis")
@@ -160,6 +163,7 @@ def test_list_models(client: TestClient, viewer_token: str) -> None:
 # Runs
 # ---------------------------------------------------------------------------
 
+
 def test_list_runs_requires_auth(client: TestClient) -> None:
     r = client.get("/runs")
     assert r.status_code == 401
@@ -178,9 +182,7 @@ def test_get_run_404(client: TestClient, viewer_token: str) -> None:
     assert r.status_code == 404
 
 
-def test_get_run_returns_kpis_when_present(
-    client: TestClient, viewer_token: str
-) -> None:
+def test_get_run_returns_kpis_when_present(client: TestClient, viewer_token: str) -> None:
     """If any runs exist in the warehouse, fetching one returns its KPIs."""
     listing = client.get("/runs?limit=1", headers=_auth(viewer_token)).json()
     if not listing["items"]:
@@ -196,6 +198,7 @@ def test_get_run_returns_kpis_when_present(
 # ---------------------------------------------------------------------------
 # Quality
 # ---------------------------------------------------------------------------
+
 
 def test_list_quality_rules(client: TestClient, viewer_token: str) -> None:
     r = client.get("/quality/rules", headers=_auth(viewer_token))
@@ -217,6 +220,7 @@ def test_list_quality_findings(client: TestClient, viewer_token: str) -> None:
 # ---------------------------------------------------------------------------
 # ETL audit
 # ---------------------------------------------------------------------------
+
 
 def test_list_etl_runs(client: TestClient, viewer_token: str) -> None:
     r = client.get("/etl/runs?limit=5", headers=_auth(viewer_token))

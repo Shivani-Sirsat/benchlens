@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime
 
 import pytest
 
@@ -61,7 +61,7 @@ def test_jwt_round_trip() -> None:
     cfg = JwtConfig(secret="testsecret", algorithm="HS256", expires_minutes=5)
     token, exp = create_access_token(user, config=cfg)
     assert isinstance(token, str) and token.count(".") == 2
-    assert exp > datetime.now(timezone.utc)
+    assert exp > datetime.now(UTC)
 
     payload = decode_access_token(token, config=cfg)
     assert payload["sub"] == "alice"

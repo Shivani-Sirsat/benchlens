@@ -7,7 +7,6 @@ preserved.
 
 from __future__ import annotations
 
-import os
 import shutil
 from pathlib import Path
 
@@ -38,12 +37,14 @@ def staged_csv(tmp_path: Path) -> Path:
 @pytest.fixture(autouse=True)
 def _cleanup() -> None:
     """Remove any rows the previous test run created under our source name."""
+
     def _purge() -> None:
         with session_scope() as s:
             # KPI rows cascade via FK; deleting runs is enough.
             run_dates = s.execute(
-                select(FactBenchmarkRun.run_id, FactBenchmarkRun.run_date)
-                .where(FactBenchmarkRun.source_name == SOURCE_NAME)
+                select(FactBenchmarkRun.run_id, FactBenchmarkRun.run_date).where(
+                    FactBenchmarkRun.source_name == SOURCE_NAME
+                )
             ).all()
             if run_dates:
                 ids = [r.run_id for r in run_dates]
@@ -59,15 +60,16 @@ def _cleanup() -> None:
                         FactBenchmarkRun.source_name == SOURCE_NAME,
                     )
                 )
-            s.execute(
-                delete(EtlRunLog).where(EtlRunLog.source_name == SOURCE_NAME)
-            )
+            s.execute(delete(EtlRunLog).where(EtlRunLog.source_name == SOURCE_NAME))
+
     _purge()
     yield
     _purge()
 
 
-def test_pipeline_loads_csv_into_warehouse(staged_csv: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_pipeline_loads_csv_into_warehouse(
+    staged_csv: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     """Run the full pipeline and verify fact rows landed."""
     fake_source = {
         "name": SOURCE_NAME,
@@ -80,9 +82,7 @@ def test_pipeline_loads_csv_into_warehouse(staged_csv: Path, monkeypatch: pytest
     }
     # pipeline_runner imports load_source_config at module load, so we must
     # patch the bound name there as well as the factory module's own copy.
-    monkeypatch.setattr(
-        "benchlens.ingestion.factory.load_source_config", lambda name: fake_source
-    )
+    monkeypatch.setattr("benchlens.ingestion.factory.load_source_config", lambda name: fake_source)
     monkeypatch.setattr(
         "benchlens.orchestration.pipeline_runner.load_source_config",
         lambda name: fake_source,
@@ -109,28 +109,33 @@ def test_pipeline_loads_csv_into_warehouse(staged_csv: Path, monkeypatch: pytest
         )
         assert run_count is not None
         all_runs = s.execute(
-            select(FactBenchmarkRun.run_id)
-            .where(FactBenchmarkRun.source_name == SOURCE_NAME)
+            select(FactBenchmarkRun.run_id).where(FactBenchmarkRun.source_name == SOURCE_NAME)
         ).all()
         assert len(all_runs) == 10
 
         # KPI count must match what the writer reported.
         kpi_count = s.scalar(
             select(FactKpiValue)
-            .join(FactBenchmarkRun,
-                  (FactKpiValue.run_id == FactBenchmarkRun.run_id)
-                  & (FactKpiValue.run_date == FactBenchmarkRun.run_date))
+            .join(
+                FactBenchmarkRun,
+                (FactKpiValue.run_id == FactBenchmarkRun.run_id)
+                & (FactKpiValue.run_date == FactBenchmarkRun.run_date),
+            )
             .where(FactBenchmarkRun.source_name == SOURCE_NAME)
             .with_only_columns(FactKpiValue.kpi_id)
         )
         assert kpi_count is not None
 
         # The audit row exists and is marked success.
-        audit = s.execute(
-            select(EtlRunLog)
-            .where(EtlRunLog.source_name == SOURCE_NAME)
-            .order_by(EtlRunLog.log_id.desc())
-        ).scalars().first()
+        audit = (
+            s.execute(
+                select(EtlRunLog)
+                .where(EtlRunLog.source_name == SOURCE_NAME)
+                .order_by(EtlRunLog.log_id.desc())
+            )
+            .scalars()
+            .first()
+        )
         assert audit is not None
         assert audit.status == "success"
         assert audit.rows_in == 10
@@ -147,9 +152,7 @@ def test_pipeline_is_idempotent(staged_csv: Path, monkeypatch: pytest.MonkeyPatc
         "pattern": "*.csv",
         "mapping": {"source_record_key": "run_id"},
     }
-    monkeypatch.setattr(
-        "benchlens.ingestion.factory.load_source_config", lambda name: fake_source
-    )
+    monkeypatch.setattr("benchlens.ingestion.factory.load_source_config", lambda name: fake_source)
     monkeypatch.setattr(
         "benchlens.orchestration.pipeline_runner.load_source_config",
         lambda name: fake_source,
@@ -163,7 +166,6 @@ def test_pipeline_is_idempotent(staged_csv: Path, monkeypatch: pytest.MonkeyPatc
 
     with session_scope() as s:
         rows = s.execute(
-            select(FactBenchmarkRun.run_id)
-            .where(FactBenchmarkRun.source_name == SOURCE_NAME)
+            select(FactBenchmarkRun.run_id).where(FactBenchmarkRun.source_name == SOURCE_NAME)
         ).all()
         assert len(rows) == 10  # no duplicates after second run.

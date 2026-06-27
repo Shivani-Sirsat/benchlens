@@ -27,4 +27,3 @@ __all__ = [
     "load_source_config",
     "register_connector",
 ]
-

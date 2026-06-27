@@ -35,6 +35,7 @@ log = get_logger(__name__)
 
 # ---------- root commands ----------
 
+
 @app.command()
 def version() -> None:
     """Print the BenchLens version."""
@@ -59,6 +60,7 @@ def info() -> None:
 
 
 # ---------- db subcommands ----------
+
 
 @db_app.command("ping")
 def db_ping() -> None:
@@ -86,14 +88,11 @@ def db_reset(
     yes: bool = typer.Option(False, "--yes", "-y", help="Skip confirmation prompt."),
 ) -> None:
     """Drop and recreate all warehouse tables (dev only)."""
-    from sqlalchemy import text
 
     from benchlens.utils.db import get_engine
 
     if not yes:
-        confirm = typer.confirm(
-            "This will DROP all BenchLens tables. Continue?", default=False
-        )
+        confirm = typer.confirm("This will DROP all BenchLens tables. Continue?", default=False)
         if not confirm:
             console.print("[yellow]Aborted.[/yellow]")
             raise typer.Exit(code=1)
@@ -109,7 +108,9 @@ def db_reset(
     """
     with get_engine().begin() as conn:
         conn.exec_driver_sql(drop_sql)
-    console.print("[green]All BenchLens tables dropped.[/green] Run [bold]benchlens db bootstrap[/bold] to recreate.")
+    console.print(
+        "[green]All BenchLens tables dropped.[/green] Run [bold]benchlens db bootstrap[/bold] to recreate."
+    )
 
 
 # ---------- pipeline subcommands ----------
@@ -158,7 +159,9 @@ def pipeline_run(
     console.print(table)
 
     if summary.runs_upserted == 0 and summary.rows_extracted > 0:
-        console.print("[yellow]No rows loaded — check quarantine / dimension warnings above.[/yellow]")
+        console.print(
+            "[yellow]No rows loaded — check quarantine / dimension warnings above.[/yellow]"
+        )
         raise typer.Exit(code=1)
     console.print("[green]Pipeline complete.[/green]")
 
@@ -175,7 +178,9 @@ def quality_rules() -> None:
     from benchlens.quality import load_rules
 
     rules = load_rules()
-    table = Table(title=f"DQ rules ({len(rules)} total)", show_header=True, header_style="bold cyan")
+    table = Table(
+        title=f"DQ rules ({len(rules)} total)", show_header=True, header_style="bold cyan"
+    )
     table.add_column("ID")
     table.add_column("Type")
     table.add_column("Severity")
@@ -214,7 +219,9 @@ def quality_history(
         console.print("[yellow]No findings yet.[/yellow]")
         return
 
-    table = Table(title=f"DQ findings (latest {len(rows)})", show_header=True, header_style="bold cyan")
+    table = Table(
+        title=f"DQ findings (latest {len(rows)})", show_header=True, header_style="bold cyan"
+    )
     table.add_column("Detected at")
     table.add_column("Severity")
     table.add_column("Rule")
@@ -224,7 +231,8 @@ def quality_history(
     table.add_column("Message", overflow="fold")
     for r in rows:
         bm = (
-            str(r.baseline_value) if r.baseline_value is not None
+            str(r.baseline_value)
+            if r.baseline_value is not None
             else f"[{r.expected_min}, {r.expected_max}]"
         )
         table.add_row(
@@ -350,10 +358,7 @@ def reports_views_refresh() -> None:
     from benchlens.reports import refresh_views
 
     names = refresh_views()
-    console.print(
-        f"[green]Refreshed[/green] {len(names)} reporting view(s): "
-        + ", ".join(names)
-    )
+    console.print(f"[green]Refreshed[/green] {len(names)} reporting view(s): " + ", ".join(names))
 
 
 @app.command()
@@ -378,6 +383,47 @@ def serve(
         workers=workers if not reload else 1,
         log_level="info",
     )
+
+
+# ---------- scheduler subcommands ----------
+
+scheduler_app = typer.Typer(help="ETL scheduler (APScheduler).", no_args_is_help=True)
+app.add_typer(scheduler_app, name="scheduler")
+
+
+@scheduler_app.command("list")
+def scheduler_list() -> None:
+    """Show the jobs that would be scheduled (does not start the scheduler)."""
+    from benchlens.scheduler import build_default_registry
+
+    registry = build_default_registry()
+    if not len(registry):
+        console.print(
+            "[yellow]No enabled sources.[/yellow] "
+            "Set [bold]enabled: true[/bold] in config/sources.yaml."
+        )
+        raise typer.Exit(code=0)
+
+    table = Table(
+        title=f"Scheduled jobs ({len(registry)})",
+        show_header=True,
+        header_style="bold cyan",
+    )
+    table.add_column("Job ID")
+    table.add_column("Cron")
+    table.add_column("Description")
+    for job in registry:
+        table.add_row(job.job_id, job.cron, job.description)
+    console.print(table)
+
+
+@scheduler_app.command("start")
+def scheduler_start() -> None:
+    """Start the blocking scheduler (Ctrl+C to exit)."""
+    from benchlens.scheduler import SchedulerRunner
+
+    console.print("[cyan]Starting BenchLens scheduler[/cyan] (UTC). Ctrl+C to exit.")
+    SchedulerRunner().start()
 
 
 if __name__ == "__main__":

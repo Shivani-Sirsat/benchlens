@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import os
 import re
-from functools import lru_cache
+from functools import cache
 from pathlib import Path
 from typing import Any
 
@@ -25,9 +25,11 @@ _CONFIG_DIR = Path("config")
 def _interpolate(value: Any) -> Any:
     """Replace ${VAR} / ${VAR:-default} occurrences in strings using os.environ."""
     if isinstance(value, str):
+
         def repl(match: re.Match[str]) -> str:
             var_name, default = match.group(1), match.group(2)
             return os.environ.get(var_name, default if default is not None else "")
+
         return _ENV_PATTERN.sub(repl, value)
     if isinstance(value, dict):
         return {k: _interpolate(v) for k, v in value.items()}
@@ -36,7 +38,7 @@ def _interpolate(value: Any) -> Any:
     return value
 
 
-@lru_cache(maxsize=None)
+@cache
 def load_config(name: str = "settings", config_dir: Path | str = _CONFIG_DIR) -> dict[str, Any]:
     """Load a YAML config file from `config/<name>.yaml`. Cached per name."""
     path = Path(config_dir) / f"{name}.yaml"

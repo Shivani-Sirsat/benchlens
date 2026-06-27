@@ -80,6 +80,7 @@ def normalize(df: pd.DataFrame, known_kpi_codes: set[str] | None = None) -> Norm
 
 # ---------- helpers ----------
 
+
 def _detect_metric_columns(columns, known_kpi_codes: set[str]) -> dict[str, str]:
     """Return {source_column_name: canonical_kpi_code} for every KPI-looking col."""
     out: dict[str, str] = {}

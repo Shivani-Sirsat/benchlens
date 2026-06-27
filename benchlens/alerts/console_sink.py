@@ -24,6 +24,4 @@ class ConsoleSink(AlertSink):
     def emit(self, finding: Finding) -> None:
         style = _SEVERITY_STYLE.get(finding.severity, "white")
         tag = f"[{style}][{finding.severity.upper()}][/]"
-        self._console.print(
-            f"{tag} {finding.rule_type}:{finding.rule_id} → {finding.message}"
-        )
+        self._console.print(f"{tag} {finding.rule_type}:{finding.rule_id} → {finding.message}")

@@ -1,0 +1,42 @@
+# Keep the Docker build context small — exclude anything the image doesn't need.
+.git
+.github
+.gitignore
+.venv
+venv
+env
+
+# Python cruft
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+*.egg-info
+.pytest_cache
+.ruff_cache
+.coverage
+htmlcov
+dist
+build
+
+# Editor / OS
+.vscode
+.idea
+.DS_Store
+Thumbs.db
+
+# Tests and dev-only data
+tests
+notebooks
+powerbi
+kubernetes
+
+# Runtime artefacts that should be created fresh per container
+logs
+data/raw_extracts
+data/quarantine
+
+# Secrets — image must never bake these in
+.env
+.env.*
+!.env.example

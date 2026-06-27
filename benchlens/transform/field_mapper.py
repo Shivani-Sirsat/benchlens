@@ -7,7 +7,7 @@ This module renames them to BenchLens canonical names defined in
 
 from __future__ import annotations
 
-from typing import Mapping
+from collections.abc import Mapping
 
 import pandas as pd
 
@@ -39,7 +39,7 @@ def strip_prefix(df: pd.DataFrame, prefix: str) -> pd.DataFrame:
     """Drop a leading prefix from column names (e.g. "kpis.throughput" -> "throughput")."""
     if df.empty or not prefix:
         return df
-    rename = {c: c[len(prefix):] for c in df.columns if c.startswith(prefix)}
+    rename = {c: c[len(prefix) :] for c in df.columns if c.startswith(prefix)}
     if not rename:
         return df
     return df.rename(columns=rename)

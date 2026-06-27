@@ -1,6 +1,15 @@
+# BenchLens — local stack for development & demo.
+#
+#   docker compose up -d                    # postgres + bootstrap + api + scheduler
+#   docker compose logs -f api              # tail API logs
+#   docker compose exec api benchlens info  # run a one-shot CLI command
+#
+# All services share the same image (built from docker/Dockerfile); only
+# the command differs.
+
 services:
   postgres:
-    image: postgres:15-alpine
+    image: postgres:16-alpine
     container_name: benchlens-postgres
     restart: unless-stopped
     environment:
@@ -17,7 +26,76 @@ services:
       timeout: 5s
       retries: 5
 
-  # api and etl services are added on Day 9.
+  # One-shot: create the schema, load seed data, install reporting views.
+  # Runs once and exits 0; api/scheduler wait for it via service_completed_successfully.
+  bootstrap:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    image: benchlens:local
+    container_name: benchlens-bootstrap
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: ${POSTGRES_DB:-benchlens}
+      POSTGRES_USER: ${POSTGRES_USER:-benchlens}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-benchlens}
+    command: ["db", "bootstrap"]
+    restart: "no"
+
+  api:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    image: benchlens:local
+    container_name: benchlens-api
+    depends_on:
+      bootstrap:
+        condition: service_completed_successfully
+    environment:
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: ${POSTGRES_DB:-benchlens}
+      POSTGRES_USER: ${POSTGRES_USER:-benchlens}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-benchlens}
+      API_HOST: 0.0.0.0
+      API_PORT: 8000
+      JWT_SECRET: ${JWT_SECRET:-please_change_me_local_dev}
+    command: ["serve", "--host", "0.0.0.0", "--port", "8000"]
+    ports:
+      - "${API_PORT:-8000}:8000"
+    restart: unless-stopped
+    healthcheck:
+      test:
+        - "CMD"
+        - "python"
+        - "-c"
+        - "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://localhost:8000/health',timeout=3).status==200 else 1)"
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  scheduler:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    image: benchlens:local
+    container_name: benchlens-scheduler
+    depends_on:
+      bootstrap:
+        condition: service_completed_successfully
+    environment:
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: ${POSTGRES_DB:-benchlens}
+      POSTGRES_USER: ${POSTGRES_USER:-benchlens}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-benchlens}
+    command: ["scheduler", "start"]
+    restart: unless-stopped
 
 volumes:
   benchlens_pgdata:

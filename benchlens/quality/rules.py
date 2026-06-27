@@ -7,8 +7,9 @@ the runner can iterate over efficiently.
 
 from __future__ import annotations
 
+from collections.abc import Iterable
 from dataclasses import dataclass, field
-from typing import Any, Iterable
+from typing import Any
 
 from benchlens.utils.config_loader import load_config
 
@@ -88,7 +89,10 @@ def _build_rule(raw: dict[str, Any], default_severity: str) -> Rule:
                 f"Range rule '{rule_id}' must specify at least one of 'min' or 'max'."
             )
         return RangeRule(
-            id=rule_id, type=rule_type, severity=severity, description=description,
+            id=rule_id,
+            type=rule_type,
+            severity=severity,
+            description=description,
             kpi_code=kpi_code,
             min=float(min_v) if min_v is not None else None,
             max=float(max_v) if max_v is not None else None,
@@ -97,7 +101,10 @@ def _build_rule(raw: dict[str, Any], default_severity: str) -> Rule:
     if rule_type == "freshness":
         max_age_days = int(raw.get("max_age_days", 365))
         return FreshnessRule(
-            id=rule_id, type=rule_type, severity=severity, description=description,
+            id=rule_id,
+            type=rule_type,
+            severity=severity,
+            description=description,
             max_age_days=max_age_days,
         )
 
@@ -106,16 +113,17 @@ def _build_rule(raw: dict[str, Any], default_severity: str) -> Rule:
         baseline_runs = int(raw.get("baseline_runs", 5))
         threshold_pct = float(raw.get("threshold_pct", 20.0))
         if baseline_runs < 1:
-            raise RuleConfigError(
-                f"Regression rule '{rule_id}': baseline_runs must be >= 1."
-            )
+            raise RuleConfigError(f"Regression rule '{rule_id}': baseline_runs must be >= 1.")
         if threshold_pct <= 0:
-            raise RuleConfigError(
-                f"Regression rule '{rule_id}': threshold_pct must be > 0."
-            )
+            raise RuleConfigError(f"Regression rule '{rule_id}': threshold_pct must be > 0.")
         return RegressionRule(
-            id=rule_id, type=rule_type, severity=severity, description=description,
-            kpi_code=kpi_code, baseline_runs=baseline_runs, threshold_pct=threshold_pct,
+            id=rule_id,
+            type=rule_type,
+            severity=severity,
+            description=description,
+            kpi_code=kpi_code,
+            baseline_runs=baseline_runs,
+            threshold_pct=threshold_pct,
         )
 
     raise RuleConfigError(f"Rule '{rule_id}' has unknown type '{rule_type}'.")

@@ -82,12 +82,19 @@ class RESTConnector(BaseConnector):
                     break
 
                 all_records.extend(page_records)
-                log.debug("[%s] page %d fetched %d records (total=%d).",
-                          self.name, page, len(page_records), len(all_records))
+                log.debug(
+                    "[%s] page %d fetched %d records (total=%d).",
+                    self.name,
+                    page,
+                    len(page_records),
+                    len(all_records),
+                )
 
                 cursor = _dig(body, cursor_path) if cursor_path else None
-                has_more = bool(_dig(body, has_more_path)) if has_more_path else (
-                    len(page_records) >= page_size
+                has_more = (
+                    bool(_dig(body, has_more_path))
+                    if has_more_path
+                    else (len(page_records) >= page_size)
                 )
                 if cursor_path and not cursor:
                     break
@@ -115,6 +122,7 @@ class RESTConnector(BaseConnector):
             pw = os.environ.get(pw_env or "", "") if pw_env else ""
             if user and pw:
                 import base64
+
                 creds = base64.b64encode(f"{user}:{pw}".encode()).decode()
                 headers["Authorization"] = f"Basic {creds}"
         elif atype and atype != "none":

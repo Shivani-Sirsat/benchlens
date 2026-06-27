@@ -148,8 +148,7 @@ def _apply_migrations() -> list[str]:
     engine = get_engine()
     with engine.connect() as conn:
         applied = {
-            row[0]
-            for row in conn.execute(text("SELECT version FROM schema_version")).fetchall()
+            row[0] for row in conn.execute(text("SELECT version FROM schema_version")).fetchall()
         }
 
     new_files: list[str] = []
@@ -170,8 +169,15 @@ def _apply_migrations() -> list[str]:
 def _summary() -> None:
     engine = get_engine()
     tables = [
-        "dim_date", "dim_workload", "dim_hardware", "dim_stack",
-        "dim_model", "dim_kpi", "fact_benchmark_run", "fact_kpi_value", "etl_run_log",
+        "dim_date",
+        "dim_workload",
+        "dim_hardware",
+        "dim_stack",
+        "dim_model",
+        "dim_kpi",
+        "fact_benchmark_run",
+        "fact_kpi_value",
+        "etl_run_log",
     ]
     with engine.connect() as conn:
         log.info("--- Warehouse summary ---")

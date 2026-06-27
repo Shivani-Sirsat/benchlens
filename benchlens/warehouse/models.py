@@ -40,6 +40,7 @@ class Base(DeclarativeBase):
 # Dimensions
 # ============================================================================
 
+
 class DimDate(Base):
     __tablename__ = "dim_date"
 
@@ -90,9 +91,7 @@ class DimHardware(Base):
     )
 
     __table_args__ = (
-        CheckConstraint(
-            "accelerator_type IN ('CPU','GPU','NPU')", name="dim_hardware_accel_check"
-        ),
+        CheckConstraint("accelerator_type IN ('CPU','GPU','NPU')", name="dim_hardware_accel_check"),
         Index("idx_dim_hardware_accel", "accelerator_type"),
     )
 
@@ -157,6 +156,7 @@ class DimKpi(Base):
 # Facts
 # ============================================================================
 
+
 class FactBenchmarkRun(Base):
     __tablename__ = "fact_benchmark_run"
 
@@ -172,9 +172,7 @@ class FactBenchmarkRun(Base):
     )
     stack_id: Mapped[int | None] = mapped_column(Integer, ForeignKey("dim_stack.stack_id"))
     model_id: Mapped[int | None] = mapped_column(Integer, ForeignKey("dim_model.model_id"))
-    date_id: Mapped[int] = mapped_column(
-        Integer, ForeignKey("dim_date.date_id"), nullable=False
-    )
+    date_id: Mapped[int] = mapped_column(Integer, ForeignKey("dim_date.date_id"), nullable=False)
     run_date: Mapped[date] = mapped_column(Date, nullable=False)
     started_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     duration_s: Mapped[Decimal | None] = mapped_column(Numeric(12, 3))
@@ -195,7 +193,9 @@ class FactBenchmarkRun(Base):
     __table_args__ = (
         PrimaryKeyConstraint("run_id", "run_date", name="fact_benchmark_run_pkey"),
         UniqueConstraint(
-            "source_name", "source_record_key", "run_date",
+            "source_name",
+            "source_record_key",
+            "run_date",
             name="fact_benchmark_run_source_unique",
         ),
         CheckConstraint(
@@ -217,9 +217,7 @@ class FactKpiValue(Base):
 
     run_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
     run_date: Mapped[date] = mapped_column(Date, nullable=False)
-    kpi_id: Mapped[int] = mapped_column(
-        Integer, ForeignKey("dim_kpi.kpi_id"), nullable=False
-    )
+    kpi_id: Mapped[int] = mapped_column(Integer, ForeignKey("dim_kpi.kpi_id"), nullable=False)
     value: Mapped[Decimal] = mapped_column(Numeric(20, 6), nullable=False)
     inference_time_ms: Mapped[Decimal | None] = mapped_column(Numeric(12, 3))
     power_watts_avg: Mapped[Decimal | None] = mapped_column(Numeric(8, 2))
@@ -251,6 +249,7 @@ class FactKpiValue(Base):
 # Audit / operational
 # ============================================================================
 
+
 class EtlRunLog(Base):
     __tablename__ = "etl_run_log"
 
@@ -279,6 +278,7 @@ class EtlRunLog(Base):
 
 class QualityCheckResult(Base):
     """Persisted DQ + regression-detection findings (failed checks only)."""
+
     __tablename__ = "quality_check_result"
 
     check_id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
@@ -306,9 +306,7 @@ class QualityCheckResult(Base):
     extra: Mapped[dict | None] = mapped_column(JSONB)
 
     __table_args__ = (
-        CheckConstraint(
-            "status IN ('pass','fail')", name="quality_check_result_status_check"
-        ),
+        CheckConstraint("status IN ('pass','fail')", name="quality_check_result_status_check"),
         CheckConstraint(
             "severity IN ('info','warning','error','critical')",
             name="quality_check_result_severity_check",
