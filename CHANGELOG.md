@@ -4,7 +4,27 @@ All notable changes to BenchLens will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [1.0.0] — Day 10: Documentation, demo & release
+### Added
+- **`README.md`** rebuilt with hero mermaid diagram, badges, one-command
+  Docker quickstart, native quickstart, demo credentials table,
+  dashboards table, architecture topology diagram, project structure,
+  tech-decisions paragraph, and 10-day build log.
+- **`docs/architecture.md`** — full system architecture: logical data
+  flow (mermaid), star-schema ER diagram (mermaid), reporting view
+  catalog with grain/dashboard mapping, runtime topology of
+  `docker-compose` (mermaid), process model, security model,
+  observability, and explicit out-of-scope notes.
+- **`docs/decisions.md`** — 10 ADR-style decisions covering Postgres,
+  star + partitioning, SQLAlchemy + psycopg 3, FastAPI + PyJWT +
+  stdlib scrypt, APScheduler, Power BI Desktop, multi-stage Docker,
+  Ruff, specs-over-binaries for `.pbix`, and the CI `COPY data` fix.
+- **`docs/screenshots/README.md`** — placeholder + instructions for
+  regenerating dashboard screenshots from the committed `.pbids`
+  connection file and dashboard specs.
+
+### Released
+- Tagged **v1.0.0** — feature-complete benchmark analytics platform.
 
 ## [0.9.0] — Day 9: Orchestration, containerization & CI/CD
 ### Added
